@@ -3,7 +3,6 @@ const Cart = db.Cart;
 const CartItem = db.CartItem;
 const Medicine = db.Medicine;
 
-// Helper function: User ka cart hasil karna ya naya banana
 const getOrCreateCart = async (userId) => {
     let cart = await Cart.findOne({ where: { user_id: userId } });
     if (!cart) {
@@ -13,7 +12,6 @@ const getOrCreateCart = async (userId) => {
 };
 
 
-// 1. Cart mein Item Add Karna
 exports.addItemToCart = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -30,17 +28,14 @@ exports.addItemToCart = async (req, res) => {
             return res.status(404).send({ message: "Medicine nahi mili." });
         }
 
-        // Check karein ke item pehle se cart mein hai ya nahi
         let cartItem = await CartItem.findOne({
             where: { cart_id: cart.id, medicine_id: medicineId }
         });
 
         if (cartItem) {
-            // Agar pehle se hai, to quantity barha dein
             cartItem.quantity += quantity;
             await cartItem.save();
         } else {
-            // Agar naya hai, to create karein
             cartItem = await CartItem.create({
                 cart_id: cart.id,
                 medicine_id: medicineId,
@@ -53,7 +48,6 @@ exports.addItemToCart = async (req, res) => {
     }
 };
 
-// 2. User ka Cart Dekhna
 exports.getCart = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -62,7 +56,7 @@ exports.getCart = async (req, res) => {
             include: [{
                 model: CartItem,
                 include: [{
-                    model: Medicine, // Har cart item ke saath uski medicine ki details bhi lao
+                    model: Medicine, 
                     attributes: ['id', 'name', 'price', 'image_url']
                 }]
             }]
@@ -77,11 +71,10 @@ exports.getCart = async (req, res) => {
     }
 };
 
-// 3. Cart mein Item ki Quantity Update Karna
 exports.updateCartItem = async (req, res) => {
     try {
         const userId = req.user.id;
-        const itemId = req.params.itemId; // Yeh CartItem ki ID hai, medicine ki nahi
+        const itemId = req.params.itemId; 
         const { quantity } = req.body;
 
         if (quantity <= 0) {
@@ -107,11 +100,10 @@ exports.updateCartItem = async (req, res) => {
     }
 };
 
-// 4. Cart se Item Remove Karna
 exports.removeItemFromCart = async (req, res) => {
     try {
         const userId = req.user.id;
-        const itemId = req.params.itemId; // Yeh CartItem ki ID hai
+        const itemId = req.params.itemId; 
 
         const cart = await Cart.findOne({ where: { user_id: userId } });
         if (!cart) {

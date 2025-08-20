@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
+const passport = require('passport');
+
+
 
 /**
  * @swagger
@@ -207,5 +210,19 @@ router.post('/forgot-password', authController.forgotPassword);
  */
 router.post('/reset-password', authController.resetPassword);
 
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// 2. Doosra route Google se wapas aane par handle karega
+router.get('/google/callback', 
+    passport.authenticate('google', { session: false, failureRedirect: '/login-failed' }),
+    authController.socialLoginSuccess // Ek naya controller function
+);
+
+
+router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+router.get('/facebook/callback',
+    passport.authenticate('facebook', { session: false }),
+    authController.socialLoginSuccess
+);
 
 module.exports = router;

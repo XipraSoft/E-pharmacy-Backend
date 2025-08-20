@@ -65,4 +65,66 @@ router.post('/delivery-agents', adminController.createDeliveryAgent);
  */
 router.patch('/orders/assign', adminController.assignOrderToAgent);
 
+
+
+
+/**
+ * @swagger
+ * tags:
+ *   name: 4. Admin
+ *   description: Sirf Admin ke liye makhsoos operations. (Authorization Token Zaroori Hai)
+ */
+
+router.use([verifyToken, isAdmin]); // Is file ke saare routes Admin-only hain
+
+//
+
+// --- Order Management ---
+/**
+ * @swagger
+ * /api/admin/orders/all:
+ *   get:
+ *     summary: Saare users ke orders dekhna (Admin Only)
+ *     tags: [4. Admin]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [Pending, Processing, Packed, Shipped, Delivered, Cancelled] }
+ *         description: Order status se filter karein
+ *     responses:
+ *       200:
+ *         description: Saare orders ka array.
+ */
+router.get('/orders/all', adminController.getAllOrders);
+
+/**
+ * @swagger
+ * /api/admin/orders/status/{id}:
+ *   patch:
+ *     summary: Ek order ka status update karna (Admin Only)
+ *     tags: [4. Admin]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *         description: Order ki ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status: { type: string, enum: [Processing, Packed, Shipped, Delivered, Cancelled], example: "Shipped" }
+ *     responses:
+ *       200:
+ *         description: Order ka status kamyabi se update ho gaya.
+ */
+router.patch('/orders/status/:id', adminController.updateOrderStatus);
+
+
 module.exports = router;

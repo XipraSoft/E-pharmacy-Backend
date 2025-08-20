@@ -3,7 +3,6 @@ const DeliveryAgent = db.DeliveryAgent;
 const Order = db.Order;
 const bcrypt = require('bcryptjs');
 
-// Admin: Naya delivery agent add karna
 exports.createDeliveryAgent = async (req, res) => {
     try {
         const { name, email, phone, password } = req.body;
@@ -18,7 +17,6 @@ exports.createDeliveryAgent = async (req, res) => {
     }
 };
 
-// Admin: Order ko agent ko assign karna
 exports.assignOrderToAgent = async (req, res) => {
     try {
         const { orderId, agentId } = req.body;
@@ -30,12 +28,53 @@ exports.assignOrderToAgent = async (req, res) => {
         }
 
         order.delivery_agent_id = agentId;
-        order.status = 'Assigned'; // Hum order ka status bhi update kar sakte hain
+        order.status = 'Assigned'; 
         await order.save();
         
         res.status(200).send({ message: `Order #${orderId} kamyabi se Agent #${agentId} ko assign ho gaya.` });
 
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
+    }
+};
+exports.getAllOrders = async (req, res) => {
+    try {
+        // Optional: Status se filter karna, e.g., ?status=Pending
+        const { status } = req.query;
+        let whereClause = {};
+        if (status) {
+            whereClause.status = status;
+        }
+
+        const orders = await Order.findAll({
+            where: whereClause,
+            order: [['createdAt', 'DESC']]
+        });
+        res.status(200).send(orders);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+exports.updateOrderStatus = async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const { status } = req.body;
+
+        if (!status) {
+            return res.status(400).send({ message: "Status zaroori hai." });
+        }
+
+        const [updated] = await Order.update({ status: status }, {
+            where: { id: orderId }
+        });
+
+        if (updated) {
+            res.status(200).send({ message: `Order ka status '${status}' par update ho gaya hai.` });
+        } else {
+            res.status(404).send({ message: "Order nahi mila." });
+        }
+    } catch (error) {
+        res.status(500).send({ message: error.message });
     }
 };

@@ -25,7 +25,6 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-        // NAYI FIELDS KO REQ.BODY SE NIKALNA
         const { name, phone, dob, gender } = req.body;
 
         const user = await User.findByPk(userId);
@@ -33,19 +32,16 @@ exports.updateProfile = async (req, res) => {
             return res.status(404).send({ message: "User nahi mila." });
         }
 
-        // Sirf woh cheezein update karna jo user ne bheji hain
         if (name) user.name = name;
         if (phone) user.phone = phone;
-        if (dob) user.dob = dob;       // NAYI LINE
-        if (gender) user.gender = gender; // NAYI LINE
+        if (dob) user.dob = dob;       
+        if (gender) user.gender = gender; 
 
         await user.save();
 
-        // Response se sensitive fields hata dein
         const userResponse = user.toJSON();
         delete userResponse.password;
         delete userResponse.resetPasswordToken;
-        // ... baaki sensitive fields
 
         res.status(200).send({
             message: "Profile kamyabi se update ho gayi!",

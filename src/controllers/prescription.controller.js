@@ -1,10 +1,9 @@
 const db = require('../models');
 const Prescription = db.Prescription;
 
-// 1. User: Prescription Upload Karna
 exports.uploadPrescription = async (req, res) => {
     try {
-        const userId = req.user.id; // Logged-in user ki ID
+        const userId = req.user.id; 
 
         if (!req.file) {
             return res.status(400).send({ message: "Prescription ki file zaroori hai." });
@@ -15,7 +14,7 @@ exports.uploadPrescription = async (req, res) => {
         const newPrescription = await Prescription.create({
             user_id: userId,
             file_path: filePath,
-            status: 'Pending' // By default status Pending hoga
+            status: 'Pending' 
         });
 
         res.status(201).send({ 
@@ -27,7 +26,6 @@ exports.uploadPrescription = async (req, res) => {
     }
 };
 
-// 2. User: Apni saari Prescriptions ka Status Dekhna
 exports.getMyPrescriptions = async (req, res) => {
     try {
         const userId = req.user.id;

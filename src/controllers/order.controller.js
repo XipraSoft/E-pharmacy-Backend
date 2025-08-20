@@ -1,7 +1,7 @@
 const db = require('../models');
-const { sequelize } = require('../models'); // Transaction ke liye
+const { sequelize } = require('../models');
 
-// Saare Models
+// Saare zaroori Models
 const Order = db.Order;
 const OrderItem = db.OrderItem;
 const Cart = db.Cart;
@@ -9,21 +9,19 @@ const CartItem = db.CartItem;
 const Medicine = db.Medicine;
 const Address = db.Address;
 
+// ==========================================================
+// USER FUNCTIONS
+// ==========================================================
 
 // 1. Order Place Karna
 exports.placeOrder = async (req, res) => {
     const userId = req.user.id;
     const { addressId } = req.body;
-
     if (!addressId) {
         return res.status(400).send({ message: "Shipping address zaroori hai." });
     }
-
-    // Sequelize Transaction Shuru Karein
     const t = await sequelize.transaction();
-
     try {
-        // Step 1: User ka cart aur address hasil karna
         const cart = await Cart.findOne({ where: { user_id: userId }, include: [CartItem] }, { transaction: t });
         const address = await Address.findOne({ where: { id: addressId, user_id: userId } }, { transaction: t });
 
@@ -37,8 +35,6 @@ exports.placeOrder = async (req, res) => {
         }
 
         let totalAmount = 0;
-
-        // Step 2: Har item ka stock check karna aur total amount calculate karna
         for (const item of cart.CartItems) {
             const medicine = await Medicine.findByPk(item.medicine_id, { transaction: t });
             if (medicine.inventory_quantity < item.quantity) {
@@ -48,40 +44,73 @@ exports.placeOrder = async (req, res) => {
             totalAmount += medicine.price * item.quantity;
         }
 
-        // Step 3: Naya Order banana
         const newOrder = await Order.create({
             user_id: userId,
             total_amount: totalAmount,
             shipping_address: `${address.street}, ${address.city}, ${address.state} - ${address.zip_code}`,
-            status: 'Pending', // Initial status
+            status: 'Pending',
             payment_status: 'Pending'
         }, { transaction: t });
 
-        // Step 4: Cart items ko OrderItems mein move karna aur inventory update karna
         for (const item of cart.CartItems) {
             const medicine = await Medicine.findByPk(item.medicine_id, { transaction: t });
             await OrderItem.create({
                 order_id: newOrder.id,
                 medicine_id: item.medicine_id,
                 quantity: item.quantity,
-                price: medicine.price // Us waqt ki qeemat save karna
+                price: medicine.price
             }, { transaction: t });
 
-            // Inventory update karna
             medicine.inventory_quantity -= item.quantity;
             await medicine.save({ transaction: t });
         }
 
-        // Step 5: Cart ko khali karna
         await CartItem.destroy({ where: { cart_id: cart.id } }, { transaction: t });
 
-        // Agar sab kuch theek hai, to transaction ko commit (save) kar dein
         await t.commit();
         res.status(201).send({ message: "Order kamyabi se place ho gaya!", order: newOrder });
 
     } catch (error) {
-        // Agar koi bhi error aaye, to transaction ko rollback (undo) kar dein
         await t.rollback();
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// 2. User: Apni Order History Dekhna
+exports.getOrderHistory = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orders = await Order.findAll({
+            where: { user_id: userId },
+            order: [['createdAt', 'DESC']],
+            attributes: ['id', 'total_amount', 'status', 'payment_status', 'createdAt']
+        });
+        res.status(200).send(orders);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// 3. User: Ek Specific Order ki Details Dekhna
+exports.getOrderDetails = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orderId = req.params.id;
+
+        const order = await Order.findOne({
+            where: { id: orderId, user_id: userId },
+            include: [{
+                model: OrderItem,
+                as: 'items',
+                include: [Medicine]
+            }]
+        });
+
+        if (!order) {
+            return res.status(404).send({ message: "Order nahi mila." });
+        }
+        res.status(200).send(order);
+    } catch (error) {
         res.status(500).send({ message: error.message });
     }
 };

@@ -13,8 +13,8 @@ static associate(models) {
   this.hasOne(models.Cart, { foreignKey: 'user_id' });
   ;
 }
-// ...
-  }
+
+}
   User.init({
 
     name: DataTypes.STRING,

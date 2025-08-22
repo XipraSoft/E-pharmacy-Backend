@@ -39,7 +39,6 @@ exports.assignOrderToAgent = async (req, res) => {
 };
 exports.getAllOrders = async (req, res) => {
     try {
-        // Optional: Status se filter karna, e.g., ?status=Pending
         const { status } = req.query;
         let whereClause = {};
         if (status) {

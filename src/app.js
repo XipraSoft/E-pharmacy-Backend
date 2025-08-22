@@ -51,15 +51,4 @@ app.use('/api/orders', require('./routes/order.routes'));
 
 
 
-const PORT = process.env.PORT || 3000;
-
-db.sequelize.sync()
-    .then(() => {
-        console.log("Database synced successfully.");
-        app.listen(PORT, '0.0.0.0',() => {
-            console.log(`Server is running on port ${PORT}.`);
-        });
-    })
-    .catch(err => {
-        console.error("Unable to sync database:", err);
-    });
+module.exports = app;

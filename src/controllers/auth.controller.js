@@ -1,245 +1,189 @@
-const crypto = require('crypto'); 
-const sendEmail = require('../utils/email'); 
 const db = require('../models');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken'); 
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const sendEmail = require('../utils/email');
 const { Op } = require('sequelize');
 
 const User = db.User;
 
-
 exports.register = async (req, res) => {
     try {
         const { name, email, phone, password } = req.body;
-
-        if (!name || !email || !phone || !password) {
-            return res.status(400).send({ message: "Error: Name, email, phone, aur password zaroori hain." });
+        if (!name || !email || !phone || !password || password.length < 8) {
+            return res.status(400).send({ message: "Error: Please provide valid name, email, phone, and a password of at least 8 characters." });
         }
-        if (password.length < 8) {
-            return res.status(400).send({ message: "Error: Password kam se kam 8 huroof ka hona chahiye." });
-        }
-        
-        const existingUser = await User.findOne({ where: { email: email } });
+        const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
-            return res.status(409).send({ message: "Error: Email pehle se register hai." });
+            return res.status(409).send({ message: "Error: This email address is already registered." });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
 
         const newUser = await User.create({ 
-            name: name, 
-            email: email, 
-            phone: phone,
-            password: hashedPassword, 
-            verificationToken: hashedOtp
+            name, email, phone, password: hashedPassword, verificationToken: hashedOtp 
         });
 
-        const message = `E-Pharmacy par register karne ke liye aapka verification code hai: ${otp}`;
-        await sendEmail({
-            email: newUser.email,
-            subject: 'Apna Email Verify Karein',
-            message
+        const message = `Your verification code for E-Pharmacy is: ${otp}`;
+        await sendEmail({ email: newUser.email, subject: 'Verify Your Email', message });
+
+        res.status(201).send({ 
+            message: "Registration successful! An OTP has been sent to your email for verification.",
+            data: { email: newUser.email } 
         });
-
-        res.status(201).send({ message: "Registration kamyab! Apne email ko verify karne ke liye inbox check karein." });
-
     } catch (error) {
-        res.status(500).send({ message: error.message });
+        res.status(500).send({ message: "An error occurred during registration." });
     }
 };
 
 exports.verifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
-
         if (!email || !otp) {
-            return res.status(400).send({ message: "Email aur OTP zaroori hain."});
+            return res.status(400).send({ message: "Email and OTP are required." });
         }
 
-const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
-
-        const user = await User.findOne({
-            where: {
-                email: email,
-                verificationToken: hashedOtp
-            }
-        });
+        const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+        const user = await User.findOne({ where: { email, verificationToken: hashedOtp } });
 
         if (!user) {
-            return res.status(400).send({ message: "Aapka dia hua OTP ghalat hai." });
+            return res.status(400).send({ message: "The OTP you entered is incorrect. Please try again." });
         }
         
-
         user.isVerified = true;
         user.verificationToken = null;
         await user.save();
 
-        res.status(200).send({ message: "Email kamyabi se verify ho gaya! Ab aap login kar sakte hain." });
+        res.status(200).send({ message: "Email verified successfully! You can now log in." });
     } catch (error) {
-        res.status(500).send({ message: error.message });
-    }
-};
-
-
-exports.login = async (req, res) => {
-    try {
-        console.log("Step 1: Login function shuru hua.");
-
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).send({ message: "Error: Email aur password zaroori hain." });
-        }
-
-        console.log("Step 2: Database se user dhoondne ja raha hai...");
-        const user = await User.findOne({ where: { email: email } });
-        
-        if (!user) {
-            console.log("Step 2.1: User nahi mila. Response bhej raha hai.");
-            return res.status(404).send({ message: "Error: Is email ke saath koi user nahi mila." });
-        }
-        console.log("Step 3: User mil gaya. ID:", user.id);
-
-        if (!user.isVerified) {
-            console.log("Step 3.1: User verified nahi hai. Response bhej raha hai.");
-            return res.status(403).send({ message: "Login na-kamyab. Pehle apna email verify karein." });
-        }
-        console.log("Step 4: User verified hai. Password compare karne ja raha hai...");
-
-        const isPasswordCorrect = bcrypt.compareSync(password, user.password);
-        
-        if (!isPasswordCorrect) {
-            console.log("Step 4.1: Password ghalat hai. Response bhej raha hai.");
-            return res.status(401).send({ accessToken: null, message: "Error: Password ghalat hai." });
-        }
-        console.log("Step 5: Password sahi hai. Token banane ja raha hai...");
-
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-            expiresIn: 86400 
-        });
-        console.log("Step 6: Token ban gaya. Final response bhej raha hai...");
-
-        res.status(200).send({
-            id: user.id,
-            username: user.username,
-            accessToken: token
-        });
-
-    } catch (error) {
-        console.error("LOGIN FUNCTION MEIN ERROR AAYA:", error);
-        res.status(500).send({ message: error.message });
-    }
-};
-
-exports.forgotPassword = async (req, res) => {
-
-     console.log("Controller ke andar req.body ki value:", req.body);
-
-    try {
-        const user = await User.findOne({ where: { email: req.body.email } });
-        if (!user) {
-            return res.status(404).send({ message: 'Is email ke saath koi user nahi mila.' });
-        }
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        user.resetPasswordToken = crypto.createHash('sha256').update(otp).digest('hex');
-        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-        await user.save();
-
-        const message = `Aapka password reset karne ke liye OTP hai: ${otp}\n\nYeh OTP sirf 10 minute ke liye valid hai.`;
-        
-        await sendEmail({
-            email: user.email,
-            subject: 'Aapka Password Reset OTP',
-            message
-        });
-
-        res.status(200).send({ message: 'OTP aapke email par bhej diya gaya hai!' });
-
-    } catch (err) {
-        const user = await User.findOne({ where: { email: req.body.email } });
-        if(user) {
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
-            await user.save();
-        }
-        return res.status(500).send({ message: 'Email bhejne mein error aayi.' });
+        res.status(500).send({ message: "An error occurred during OTP verification." });
     }
 };
 
 exports.resendOtp = async (req, res) => {
     try {
         const { email } = req.body;
-        if (!email) {
-            return res.status(400).send({ message: "Email zaroori hai."});
-        }
-
-        const user = await User.findOne({ where: { email: email } });
-        if (!user) {
-            return res.status(404).send({ message: "Is email ke saath koi user nahi mila." });
-        }
-
-        if (user.isVerified) {
-            return res.status(400).send({ message: "Yeh account pehle se hi verified hai." });
-        }
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+        if (!email) { return res.status(400).send({ message: "Email is required."}); }
+        const user = await User.findOne({ where: { email } });
+        if (!user) { return res.status(404).send({ message: "No user found with this email." }); }
+        if (user.isVerified) { return res.status(400).send({ message: "This account is already verified." }); }
         
-        user.verificationToken = hashedOtp;
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.verificationToken = crypto.createHash('sha256').update(otp).digest('hex');
         await user.save();
-
-        const message = `Aapka naya verification code hai: ${otp}`;
-        await sendEmail({
-            email: user.email,
-            subject: 'Aapka Naya Verification Code',
-            message
-        });
-
-        res.status(200).send({ message: "Naya OTP aapke email par bhej diya gaya hai." });
-
+        
+        await sendEmail({ email: user.email, subject: 'Your New Verification Code', message: `Your new verification code is: ${otp}` });
+        res.status(200).send({ message: "A new OTP has been sent to your email." });
     } catch (error) {
-        res.status(500).send({ message: error.message });
+        res.status(500).send({ message: "An error occurred while resending OTP." });
     }
 };
 
-exports.resetPassword = async (req, res) => { 
+exports.login = async (req, res) => {
     try {
-        const { email, otp, password } = req.body;
-
-        if (!email || !otp || !password) {
-            return res.status(400).send({ message: "Email, OTP, aur naya password zaroori hain."});
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).send({ message: "Email and password are required." });
         }
-        if (password.length < 8) {
-            return res.status(400).send({ message: "Password kam se kam 8 huroof ka hona chahiye." });
+        const user = await User.findOne({ where: { email } });
+        if (!user || !bcrypt.compareSync(password, user.password)) {
+            return res.status(401).send({ message: "The email or password you entered is incorrect." });
         }
+        if (!user.isVerified) {
+            return res.status(403).send({ 
+                message: "Your account is not verified. Please check your email for the verification OTP.",
+                data: { isVerified: false, email: user.email }
+            });
+        }
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        res.status(200).send({ message: "Login successful!", data: { user, accessToken: token } });
+    } catch (error) {
+        res.status(500).send({ message: "An error occurred during login." });
+    }
+};
 
-const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');        
+
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) { return res.status(400).send({ message: "Email is required." }); }
+        const user = await User.findOne({ where: { email } });
+        if (!user) { return res.status(404).send({ message: "No user found with this email." }); }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordToken = crypto.createHash('sha256').update(otp).digest('hex');
+        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+        await user.save();
+        
+        await sendEmail({ email: user.email, subject: 'Your Password Reset OTP', message: `Your OTP to reset password is: ${otp}` });
+        res.status(200).send({ 
+            message: "An OTP has been sent to your email to reset your password.",
+            data: { email: user.email }
+        });
+    } catch (error) {
+        res.status(500).send({ message: "An error occurred." });
+    }
+};
+
+exports.verifyPasswordResetOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) { return res.status(400).send({ message: "Email and OTP are required." }); }
+
+        const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
         const user = await User.findOne({
-            where: {
-                email: email,
-                resetPasswordToken: hashedOtp,
-                resetPasswordExpires: { [Op.gt]: Date.now() }
-            }
+            where: { email, resetPasswordToken: hashedOtp, resetPasswordExpires: { [Op.gt]: Date.now() } }
         });
 
         if (!user) {
-            return res.status(400).send({ message: 'OTP ghalat hai ya expire ho chuka hai.' });
+            return res.status(400).send({ message: "The OTP is invalid or has expired." });
         }
 
-        user.password = await bcrypt.hash(password, 10);
+        const tempToken = jwt.sign({ id: user.id, purpose: 'password-reset' }, process.env.JWT_SECRET, { expiresIn: '10m' });
+        
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
         await user.save();
 
-        res.status(200).send({ message: 'Password kamyabi se reset ho gaya hai!' });
-
+        res.status(200).send({ 
+            message: "OTP verified successfully. You can now set a new password.",
+            data: { tempToken }
+        });
     } catch (error) {
-        res.status(500).send({ message: error.message });
-    }};
+        res.status(500).send({ message: "An error occurred." });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { tempToken, password } = req.body;
+        if (!tempToken || !password) { return res.status(400).send({ message: "A temporary token and a new password are required." }); }
+        if (password.length < 8) { return res.status(400).send({ message: "Password must be at least 8 characters long." }); }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            return res.status(401).send({ message: "The temporary token is invalid or has expired." });
+        }
+
+        if (decoded.purpose !== 'password-reset') {
+            return res.status(401).send({ message: "Invalid token purpose." });
+        }
+
+        const user = await User.findByPk(decoded.id);
+        if (!user) { return res.status(404).send({ message: "User not found." }); }
+
+        user.password = await bcrypt.hash(password, 10);
+        await user.save();
+
+        res.status(200).send({ message: "Your password has been reset successfully." });
+    } catch (error) {
+        res.status(500).send({ message: "An error occurred." });
+    }
+};
 
     exports.socialLoginSuccess = (req, res) => {
     const user = req.user;

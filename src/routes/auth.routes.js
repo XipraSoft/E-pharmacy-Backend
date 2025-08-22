@@ -2,90 +2,43 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const passport = require('passport');
-
-
-
 /**
  * @swagger
  * tags:
  *   name: 1. Authentication
- *   description: User registration, login, verification, aur password management. Yeh APIs public hain.
+ *   description: User registration, login, verification, and password management.
  */
 
+// --- Registration Flow ---
 /**
- * /**
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Ek naya user (customer) register karna (OTP Verification zaroori hogi)
+ *     summary: Step 1 - Ek naya user register karna
  *     tags: [1. Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - phone
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *                 description: User ka poora naam.
- *                 example: Ali Khan
- *               email:
- *                 type: string
- *                 format: email
- *                 description: User ka unique email address.
- *                 example: ali.khan@example.com
- *               phone:
- *                 type: string
- *                 description: User ka phone number.
- *                 example: "03001234567"
- *               password:
- *                 type: string
- *                 format: password
- *                 description: Password kam se kam 8 huroof ka hona chahiye.
- *                 example: mypassword123
+ *           schema: { type: 'object', required: ['name', 'email', 'phone', 'password'], properties: { name: { type: 'string' }, email: { type: 'string' }, phone: { type: 'string' }, password: { type: 'string' } } }
  *     responses:
- *       201:
- *         description: Registration kamyab. Verification OTP email par bhej diya gaya hai.
- *       400:
- *         description: Request mein data ghalat ya kam hai.
- *       409:
- *         description: Email pehle se istemal ho chuka hai.
+ *       201: { description: "Registration successful! An OTP has been sent to your email." }
  */
-router.post('/register', authController.register);
 router.post('/register', authController.register);
 
 /**
  * @swagger
  * /api/auth/verify-otp:
  *   post:
- *     summary: Registration ke baad email ko OTP se verify karna
+ *     summary: Step 2 - Registration ke baad email ko OTP se verify karna
  *     tags: [1. Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             required: [email, otp]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: testuser@example.com
- *               otp:
- *                 type: string
- *                 example: "123456"
+ *           schema: { type: 'object', required: ['email', 'otp'], properties: { email: { type: 'string' }, otp: { type: 'string' } } }
  *     responses:
- *       200:
- *         description: Email kamyabi se verify ho gaya. Ab user login kar sakta hai.
- *       400:
- *         description: Diya hua OTP ghalat hai.
+ *       200: { description: "Email verified successfully! You can now log in." }
  */
 router.post('/verify-otp', authController.verifyOtp);
 
@@ -93,30 +46,20 @@ router.post('/verify-otp', authController.verifyOtp);
  * @swagger
  * /api/auth/resend-otp:
  *   post:
- *     summary: Verification ke liye naya OTP email par bhejna
+ *     summary: (Optional) Verification ke liye naya OTP email par bhejna
  *     tags: [1. Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             required: [email]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: testuser@example.com
+ *           schema: { type: 'object', required: ['email'], properties: { email: { type: 'string' } } }
  *     responses:
- *       200:
- *         description: Naya OTP kamyabi se bhej diya gaya.
- *       400:
- *         description: Account pehle se hi verified hai.
- *       404:
- *         description: Is email ke saath koi user nahi mila.
+ *       200: { description: "A new OTP has been sent to your email address." }
  */
 router.post('/resend-otp', authController.resendOtp);
 
+
+// --- Login Flow ---
 /**
  * @swagger
  * /api/auth/login:
@@ -127,99 +70,74 @@ router.post('/resend-otp', authController.resendOtp);
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             required: [email, password]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: testuser@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: mypassword123
+ *           schema: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } }
  *     responses:
- *       200:
- *         description: Kamyab login, accessToken wapas milega.
- *       401:
- *         description: Password ghalat hai.
- *       403:
- *         description: Account verified nahi hai.
- *       404:
- *         description: User nahi mila.
+ *       200: { description: "Login successful!" }
+ *       403: { description: "Account is not verified." }
  */
 router.post('/login', authController.login);
 
+
+// --- Password Reset Flow ---
 /**
  * @swagger
  * /api/auth/forgot-password:
  *   post:
- *     summary: Password bhoolne par reset ke liye OTP bhejna
+ *     summary: Step 1 - Password bhoolne par reset ke liye OTP bhejna
  *     tags: [1. Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             required: [email]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: testuser@example.com
+ *           schema: { type: 'object', required: ['email'], properties: { email: { type: 'string' } } }
  *     responses:
- *       200:
- *         description: OTP kamyabi se bhej diya gaya.
- *       404:
- *         description: User nahi mila.
+ *       200: { description: "An OTP has been sent to your email." }
  */
 router.post('/forgot-password', authController.forgotPassword);
 
 /**
  * @swagger
- * /api/auth/reset-password:
+ * /api/auth/verify-password-otp:
  *   post:
- *     summary: OTP verify karke naya password set karna
+ *     summary: Step 2 - Password reset ke OTP ko verify karna aur ek temporary token hasil karna
  *     tags: [1. Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             required: [email, otp, password]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: testuser@example.com
- *               otp:
- *                 type: string
- *                 example: "123456"
- *               password:
- *                 type: string
- *                 format: password
- *                 example: myNewSecurePassword
+ *           schema: { type: 'object', required: ['email', 'otp'], properties: { email: { type: 'string' }, otp: { type: 'string' } } }
  *     responses:
- *       200:
- *         description: Password kamyabi se reset ho gaya.
- *       400:
- *         description: OTP ghalat ya expire ho chuka hai.
+ *       200: { description: "OTP verified. Use the returned tempToken to set a new password." }
+ */
+router.post('/verify-password-otp', authController.verifyPasswordResetOtp);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Step 3 - Temporary token ka istemal karke naya password set karna
+ *     tags: [1. Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: 'object', required: ['tempToken', 'password'], properties: { tempToken: { type: 'string' }, password: { type: 'string' } } }
+ *     responses:
+ *       200: { description: "Password has been reset successfully." }
  */
 router.post('/reset-password', authController.resetPassword);
 
+
+
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-// 2. Doosra route Google se wapas aane par handle karega
 router.get('/google/callback', 
     passport.authenticate('google', { session: false, failureRedirect: '/login-failed' }),
-    authController.socialLoginSuccess // Ek naya controller function
+    authController.socialLoginSuccess 
 );
 
 
-router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+router.get('/facebook', passport.authenticate('facebook', { scope: ['public_profile','email'] }));
 router.get('/facebook/callback',
     passport.authenticate('facebook', { session: false }),
     authController.socialLoginSuccess

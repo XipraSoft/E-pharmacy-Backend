@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
     res.send('E-Pharmacy Backend Server is running successfully!');
 });
 
-app.use('/api/auth',require('./routes/auth.routes'));
+app.use('/api/auth',require('./routes/auth.Routes'));
 
 
 app.use('/api/user', require('./routes/user.routes'));
@@ -48,6 +48,8 @@ app.use('/api/prescriptions', require('./routes/prescription.routes'));
 app.use('/api/cart', require('./routes/cart.routes'));
 
 app.use('/api/orders', require('./routes/order.routes'));
+
+app.use('/uploads', express.static('uploads'));
 
 
 

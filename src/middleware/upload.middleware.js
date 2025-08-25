@@ -7,8 +7,8 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        const uniqueSuffix = Date.now() ;
+        cb(null, file.fieldname + '-' + unique + path.extname(file.originalname));
     }
 });
 
@@ -16,7 +16,7 @@ const fileFilter = (req, file, cb) => {
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
         cb(null, true); 
     } else {
-        cb(new Error('Sirf JPEG, JPG, ya PNG format ki images hi allow hain.'), false); 
+        cb(new Error('only Image (JPG, PNG) or JPEG format is allowed .'), false); 
     }
 };
 
@@ -33,8 +33,8 @@ const prescriptionStorage = multer.diskStorage({
         cb(null, 'uploads/prescriptions/'); 
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'prescription-' + req.user.id + '-' + uniqueSuffix + path.extname(file.originalname));
+        const unique = Date.now() ;
+        cb(null, 'prescription-' + req.user.id + '-' + unique + path.extname(file.originalname));
     }
 });
 
@@ -42,7 +42,7 @@ const prescriptionFileFilter = (req, file, cb) => {
     if (file.mimetype === 'image/jpeg' || file.mmimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'application/pdf') {
         cb(null, true);
     } else {
-        cb(new Error('Sirf Image (JPG, PNG) ya PDF format hi allow hai.'), false);
+        cb(new Error('only Image (JPG, PNG) or PDF format is allowed .'), false);
     }
 };
 
@@ -54,9 +54,25 @@ const uploadPrescription = multer({
     fileFilter: prescriptionFileFilter
 });
 
+const profileStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/profiles/'); 
+    },
+    filename: (req, file, cb) => {
+        const unique = Date.now();
+        cb(null, 'avatar-' + req.user.id + '-' + unique + path.extname(file.originalname));
+    }
+});
+
+const uploadProfileImage = multer({
+    storage: profileStorage,
+    limits: { fileSize: 1024 * 1024 * 2 },
+    fileFilter: fileFilter  
+});
 
 module.exports = {
     uploadMedicineImage: upload,
-    uploadPrescription: uploadPrescription
+    uploadPrescription: uploadPrescription,
+       uploadProfileImage: uploadProfileImage
 };
 

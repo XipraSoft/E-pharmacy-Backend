@@ -4,11 +4,11 @@ const verifyToken = (req, res, next) => {
     let token = req.headers['authorization'];
 
     console.log("--- Token Verification Middleware ---");
-    console.log("Header se mila Token:", token);
+    console.log("Token recieved from header:", token);
 
     if (!token) {
         return res.status(403).send({
-            message: "Koi token nahi diya gaya!"
+            message: "Token is missing!"
         });
     }
 
@@ -18,7 +18,7 @@ const verifyToken = (req, res, next) => {
         jwt.verify(token, 'this-is-some-secret', (err, decoded) => {
             if (err) {
                 return res.status(401).send({
-                    message: "Unauthorized! Token ghalat hai."
+                    message: "Unauthorized! Token might be wrong."
                 });
             }
             req.user = decoded;
@@ -26,7 +26,7 @@ const verifyToken = (req, res, next) => {
         });
     } catch (error) {
          return res.status(401).send({
-            message: "Unauthorized! Token ghalat hai."
+            message: "Unauthorized! Token might be wrong."
         });
     }
 };

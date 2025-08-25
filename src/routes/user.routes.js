@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const { verifyToken } = require('../middleware/auth.middleware');
+const { uploadProfileImage } = require('../middleware/upload.middleware');
 
 /**
  * @swagger
@@ -66,5 +67,11 @@ router.get('/profile', [verifyToken], userController.getProfile);
  *         description: Unauthorized.
  */
 router.patch('/profile', [verifyToken], userController.updateProfile);
+
+router.delete('/deactivate', [verifyToken], userController.deactivateAccount);
+
+router.patch('/profile/image', [verifyToken, uploadProfileImage.single('profileImage')], userController.updateProfileImage);
+
+
 
 module.exports = router;

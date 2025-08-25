@@ -16,7 +16,6 @@ static associate(models) {
 
 }
   User.init({
-
     name: DataTypes.STRING,
     email: DataTypes.STRING,
     phone: DataTypes.STRING,
@@ -50,12 +49,18 @@ static associate(models) {
     gender: {
       type: DataTypes.STRING,
       allowNull: true
-    }
+    },
+      avatar_url: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
 // ...
 // ...
   }, {
     sequelize,
     modelName: 'User',
+        paranoid: true,
+
   });
   return User;
 };

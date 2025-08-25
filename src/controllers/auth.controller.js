@@ -132,7 +132,7 @@ exports.verifyPasswordResetOtp = async (req, res) => {
         const { email, otp } = req.body;
         if (!email || !otp) { return res.status(400).send({ message: "Email and OTP are required." }); }
 
-        const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+        const hashedOtp = crypto.createHash(process.env.HASH_KEY).update(otp).digest('hex');
         const user = await User.findOne({
             where: { email, resetPasswordToken: hashedOtp, resetPasswordExpires: { [Op.gt]: Date.now() } }
         });

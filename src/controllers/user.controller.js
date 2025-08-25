@@ -11,7 +11,7 @@ exports.getProfile = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(404).send({ message: "User nahi mila." });
+            return res.status(404).send({ message: "User not found." });
         }
 
         res.status(200).send(user);
@@ -28,7 +28,7 @@ exports.updateProfile = async (req, res) => {
 
         const user = await User.findByPk(userId);
         if (!user) {
-            return res.status(404).send({ message: "User nahi mila." });
+            return res.status(404).send({ message: "User not found." });
         }
 
         if (name) user.name = name;
@@ -43,7 +43,7 @@ exports.updateProfile = async (req, res) => {
         delete userResponse.resetPasswordToken;
 
         res.status(200).send({
-            message: "Profile kamyabi se update ho gayi!",
+            message: "Profile updated successfully!",
             user: userResponse
         });
     } catch (error) {

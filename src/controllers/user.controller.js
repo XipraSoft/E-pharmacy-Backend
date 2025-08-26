@@ -20,7 +20,7 @@ exports.getProfile = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
-
+//update profile
 exports.updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -50,7 +50,7 @@ exports.updateProfile = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
-
+//deactivate account
 exports.deactivateAccount = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -69,7 +69,7 @@ exports.deactivateAccount = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
-
+//update profile image
 exports.updateProfileImage = async (req, res) => {
     try {
         const userId = req.user.id;

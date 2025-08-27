@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const { verifyToken } = require('../middleware/auth.middleware');
-const { uploadProfileImage } = require('../middleware/upload.middleware');
 
 /**
  * @swagger
@@ -27,7 +26,7 @@ const { uploadProfileImage } = require('../middleware/upload.middleware');
  *       403:
  *         description: Forbidden (Token nahi diya gaya).
  */
-router.get('/profile', [verifyToken], userController.getProfile);
+router.get('/profile', verifyToken, userController.getProfile);
 
 /**
  * @swagger
@@ -66,11 +65,10 @@ router.get('/profile', [verifyToken], userController.getProfile);
  *       401:
  *         description: Unauthorized.
  */
-router.patch('/profile', [verifyToken], userController.updateProfile);
+router.patch('/profile',verifyToken, userController.updateProfile);
 
-router.delete('/deactivate', [verifyToken], userController.deactivateAccount);
+router.delete('/deactivate',verifyToken, userController.deactivateAccount);
 
-router.patch('/profile/image', [verifyToken, uploadProfileImage.single('profileImage')], userController.updateProfileImage);
 
 
 

@@ -11,7 +11,11 @@ static associate(models) {
     as: 'addresses'
   })
   this.hasOne(models.Cart, { foreignKey: 'user_id' });
-  ;
+  
+  this.hasMany(models.Image,{foreignKey: 'imageable_id',
+    constraints: false,
+    scope: { imageable_type: 'user' },
+    as: 'images'  }) ;
 }
 
 }
@@ -50,10 +54,7 @@ static associate(models) {
       type: DataTypes.STRING,
       allowNull: true
     },
-      avatar_url: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
+     
 // ...
 // ...
   }, {

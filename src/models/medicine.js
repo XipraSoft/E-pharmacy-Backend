@@ -8,6 +8,12 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
        this.hasMany(models.CartItem, { foreignKey: 'medicine_id' });
        this.hasMany(models.OrderItem, { foreignKey: 'medicine_id' });
+       this.hasMany(models.Image, {
+    foreignKey: 'imageable_id',
+    constraints: false,
+    scope: { imageable_type: 'medicine' },
+    as: 'images'
+  });
     }
   }
   Medicine.init({
@@ -19,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     side_effects: DataTypes.TEXT,
     requires_prescription: DataTypes.BOOLEAN,
     inventory_quantity: DataTypes.INTEGER,
-    image_url: DataTypes.STRING,
+    
      category: {
       type: DataTypes.STRING,
       allowNull: true

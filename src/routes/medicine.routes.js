@@ -3,7 +3,6 @@ const router = express.Router();
 const medicineController = require('../controllers/medicine.controller');
 const { verifyToken } = require('../middleware/auth.middleware');
 const { isAdmin } = require('../middleware/admin.middleware');
-const { uploadMedicineImage } = require('../middleware/upload.middleware');
 /**
  * @swagger
  * tags:
@@ -111,7 +110,6 @@ router.get('/:id', medicineController.getMedicineById);
  *       201:
  *         description: Medicine kamyabi se add ho gayi.
  */
-router.post('/', [verifyToken, isAdmin, uploadMedicineImage.single('medicineImage')], medicineController.createMedicine);
 
 /**
  * @swagger

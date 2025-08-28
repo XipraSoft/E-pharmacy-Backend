@@ -7,11 +7,11 @@ exports.createDeliveryAgent = async (req, res) => {
     try {
         const { name, email, phone, password } = req.body;
         if (!name || !email || !phone || !password) {
-            return res.status(400).send({ message: "Saari fields zaroori hain." });
+            return res.status(400).send({ message: "All fields are compulsory." });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         const agent = await DeliveryAgent.create({ name, email, phone, password: hashedPassword });
-        res.status(201).send({ message: "Delivery agent kamyabi se add ho gaya!", agent });
+        res.status(201).send({ message: "Delivery Agent added successfully!", agent });
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
     }
@@ -24,14 +24,14 @@ exports.assignOrderToAgent = async (req, res) => {
         const agent = await DeliveryAgent.findByPk(agentId);
 
         if (!order || !agent) {
-            return res.status(404).send({ message: "Order ya Agent nahi mila." });
+            return res.status(404).send({ message: "Order or Agent not found." });
         }
 
         order.delivery_agent_id = agentId;
         order.status = 'Assigned'; 
         await order.save();
         
-        res.status(200).send({ message: `Order #${orderId} kamyabi se Agent #${agentId} ko assign ho gaya.` });
+        res.status(200).send({ message: `Order #${orderId} assigned to Agent #${agentId} .` });
 
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
@@ -61,7 +61,7 @@ exports.updateOrderStatus = async (req, res) => {
         const { status } = req.body;
 
         if (!status) {
-            return res.status(400).send({ message: "Status zaroori hai." });
+            return res.status(400).send({ message: "Status is compulsory." });
         }
 
         const [updated] = await Order.update({ status: status }, {
@@ -69,9 +69,9 @@ exports.updateOrderStatus = async (req, res) => {
         });
 
         if (updated) {
-            res.status(200).send({ message: `Order ka status '${status}' par update ho gaya hai.` });
+            res.status(200).send({ message: `Order status'${status}' updated successfully` });
         } else {
-            res.status(404).send({ message: "Order nahi mila." });
+            res.status(404).send({ message: "Order not found." });
         }
     } catch (error) {
         res.status(500).send({ message: error.message });

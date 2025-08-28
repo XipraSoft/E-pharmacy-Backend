@@ -4,29 +4,23 @@ const { Op } = require('sequelize');
 
 
 exports.createMedicine = async (req, res) => {
-      console.log("--- Nayi Medicine Request ---");
-    console.log("Request Body:", req.body); 
-    console.log("Request File:", req.file); 
-
+    const t = await db.sequelize.transaction();
     try {
-        const { name, brand, description, price, dosage, side_effects, requires_prescription, inventory_quantity, category } = req.body;
-        
-        if (!name || !price || inventory_quantity === undefined) {
-            return res.status(400).send({ message: "Name, price, aur inventory quantity zaroori hain." });
-        }
-         let imageUrl;
-        
-        if (req.file) {
-            imageUrl = req.file.path;
-        } else {
-            imageUrl = 'uploads/1.jpg'; 
+        const { name, price, category, imageId } = req.body;
+
+        const newMedicine = await Medicine.create({ name, price, category }, { transaction: t });
+
+        if (imageId) {
+            await Image.update(
+                { imageable_id: newMedicine.id, imageable_type: 'medicine' },
+                { where: { id: imageId }, transaction: t }
+            );
         }
 
-        const newMedicine = await Medicine.create({
-            name, brand, description, price, dosage, side_effects, requires_prescription, inventory_quantity, image_url: imageUrl, category
-        });
-        res.status(201).send({ message: "Medicine kamyabi se add ho gayi!", medicine: newMedicine });
+        await t.commit();
+        res.status(201).send(newMedicine);
     } catch (error) {
+        await t.rollback();
         res.status(500).send({ message: error.message });
     }
 };

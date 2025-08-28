@@ -7,7 +7,6 @@ const passport = require('passport');
 const setupSwagger = require('../swagger.config');
 require('./config/passport.config');
 
-
 app.use(cors());
 
 app.use(express.json());
@@ -36,6 +35,7 @@ app.use('/api/prescriptions', require('./routes/prescription.routes'));
 app.use('/api/cart', require('./routes/cart.routes'));
 app.use('/api/orders', require('./routes/order.routes'));
 app.use('/api/payment', require('./routes/payment.routes'));
+app.use('/api/wishlist', require('./routes/wishlist.routes'));
 
 
 

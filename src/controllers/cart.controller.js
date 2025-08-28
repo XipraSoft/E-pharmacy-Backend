@@ -18,20 +18,24 @@ exports.addItemToCart = async (req, res) => {
         const { medicineId, quantity } = req.body;
 
         if (!medicineId || !quantity || quantity <= 0) {
-            return res.status(400).send({ message: "Medicine ID aur 0 se bari quantity zaroori hai." });
+            return res.status(400).send({ message: "Medicine ID and quantity greater than 0 is compulsory." });
         }
 
         const cart = await getOrCreateCart(userId);
         const medicine = await Medicine.findByPk(medicineId);
 
         if (!medicine) {
-            return res.status(404).send({ message: "Medicine nahi mili." });
+            return res.status(404).send({ message: "Medicine not found." });
         }
 
         let cartItem = await CartItem.findOne({
             where: { cart_id: cart.id, medicine_id: medicineId }
         });
-
+        const currentQuantity = cartItem ? cartItem.quantity : 0;
+        const totalQuantity = currentQuantity + quantity;
+        if (medicine.inventory_quantity < totalQuantity) {
+            return res.status(400).send({ message: `Stock not available ${medicine.name}` });
+        }
         if (cartItem) {
             cartItem.quantity += quantity;
             await cartItem.save();
@@ -42,7 +46,7 @@ exports.addItemToCart = async (req, res) => {
                 quantity: quantity
             });
         }
-        res.status(200).send({ message: "Item kamyabi se cart mein add ho gaya.", cartItem });
+        res.status(200).send({ message: "Item has been added to cart successfully", cartItem });
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
@@ -57,13 +61,14 @@ exports.getCart = async (req, res) => {
                 model: CartItem,
                 include: [{
                     model: Medicine, 
-                    attributes: ['id', 'name', 'price', 'image_url']
+                    as : 'Medicine',
+                    include: [{ model: db.Image, as: 'images', attributes: ['file_path'] }]
                 }]
             }]
         });
 
         if (!cart) {
-            return res.status(200).send({ message: "Aapka cart khali hai.", items: [] });
+            return res.status(200).send({ message: "The cart is empty", items: [] });
         }
         res.status(200).send(cart);
     } catch (error) {
@@ -78,12 +83,12 @@ exports.updateCartItem = async (req, res) => {
         const { quantity } = req.body;
 
         if (quantity <= 0) {
-            return res.status(400).send({ message: "Quantity 0 se bari honi chahiye." });
+            return res.status(400).send({ message: "Quantity must be greater tha 0" });
         }
 
         const cart = await Cart.findOne({ where: { user_id: userId } });
         if (!cart) {
-            return res.status(404).send({ message: "Cart nahi mila." });
+            return res.status(404).send({ message: "Cart not found" });
         }
 
         const [updated] = await CartItem.update({ quantity }, {
@@ -91,9 +96,9 @@ exports.updateCartItem = async (req, res) => {
         });
 
         if (updated) {
-            res.status(200).send({ message: "Cart item kamyabi se update ho gaya." });
+            res.status(200).send({ message: "Cart item updated successfully" });
         } else {
-            res.status(404).send({ message: "Cart item nahi mila." });
+            res.status(404).send({ message: "Cart item not found." });
         }
     } catch (error) {
         res.status(500).send({ message: error.message });
@@ -107,7 +112,7 @@ exports.removeItemFromCart = async (req, res) => {
 
         const cart = await Cart.findOne({ where: { user_id: userId } });
         if (!cart) {
-            return res.status(404).send({ message: "Cart nahi mila." });
+            return res.status(404).send({ message: "Cart not found." });
         }
 
         const deleted = await CartItem.destroy({
@@ -115,9 +120,9 @@ exports.removeItemFromCart = async (req, res) => {
         });
 
         if (deleted) {
-            res.status(200).send({ message: "Item kamyabi se cart se remove ho gaya." });
+            res.status(200).send({ message: "Item added to cart successfully." });
         } else {
-            res.status(404).send({ message: "Cart item nahi mila." });
+            res.status(404).send({ message: "Cart item not found" });
         }
     } catch (error) {
         res.status(500).send({ message: error.message });

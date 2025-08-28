@@ -10,7 +10,7 @@ exports.addAddress = async (req, res) => {
             user_id: userId,
             street, city, state, zip_code, country
         });
-        res.status(201).send({ message: "Address kamyabi se add ho gaya!", address: newAddress });
+        res.status(201).send({ message: "Address added successfully", address: newAddress });
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
@@ -34,10 +34,10 @@ exports.deleteAddress = async (req, res) => {
 
         const address = await Address.findOne({ where: { id: addressId, user_id: userId } });
         if (!address) {
-            return res.status(404).send({ message: "Address nahi mila ya aap isay delete nahi kar sakte." });
+            return res.status(404).send({ message: "Address not found, you can not delete it " });
         }
         await address.destroy();
-        res.status(200).send({ message: "Address kamyabi se delete ho gaya." });
+        res.status(200).send({ message: "Address deleted successfully" });
     } catch (error) {
         res.status(500).send({ message: error.message });
     }

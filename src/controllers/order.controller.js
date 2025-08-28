@@ -71,7 +71,6 @@ exports.placeOrder = async (req, res) => {
     }
 };
 
-// 2. User: Apni Order History Dekhna
 exports.getOrderHistory = async (req, res) => {
     try {
         const userId = req.user.id;

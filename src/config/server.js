@@ -3,7 +3,7 @@ const db = require('../models');
 
 const PORT = process.env.PORT || 3000;
 
-console.log("Connecting to the database...");
+console.log("Connecting to the database.....");
 
 db.sequelize.sync()
     .then(() => {

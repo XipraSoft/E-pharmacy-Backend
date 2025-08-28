@@ -9,7 +9,7 @@ exports.verifyAgentToken = (req, res, next) => {
         token = token.split(' ')[1];
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
             if (err || decoded.type !== 'delivery_agent') {
-                return res.status(401).send({ message: "Unauthorized! Agent token zaroori hai." });
+                return res.status(401).send({ message: "Unauthorized! Agent token is compulsory." });
             }
             req.agent = decoded; 
             next();

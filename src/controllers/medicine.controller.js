@@ -35,9 +35,9 @@ exports.updateMedicine = async (req, res) => {
         });
 
         if (updatedRows === 1) {
-            res.status(200).send({ message: "Medicine kamyabi se update ho gayi." });
+            res.status(200).send({ message: "Medicine deleted successfully." });
         } else {
-            res.status(404).send({ message: `Medicine ID: ${medicineId} nahi mili.` });
+            res.status(404).send({ message: `Medicine ID: ${medicineId} not found.` });
         }
     } catch (error) {
         res.status(500).send({ message: error.message });
@@ -51,9 +51,9 @@ exports.deleteMedicine = async (req, res) => {
         const deletedRows = await Medicine.destroy({ where: { id: medicineId } });
 
         if (deletedRows === 1) {
-            res.status(200).send({ message: "Medicine kamyabi se delete ho gayi." });
+            res.status(200).send({ message: "Medicine deleted successfully." });
         } else {
-            res.status(404).send({ message: `Medicine ID: ${medicineId} nahi mili.` });
+            res.status(404).send({ message: `Medicine ID: ${medicineId} not found.` });
         }
     } catch (error) {
         res.status(500).send({ message: error.message });

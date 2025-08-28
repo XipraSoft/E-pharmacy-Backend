@@ -9,7 +9,7 @@ exports.createCheckoutSession = async (req, res) => {
 
         const order = await Order.findOne({ where: { id: orderId, user_id: userId }, include: ['items'] });
         if (!order) {
-            return res.status(404).send({ message: "Order nahi mila." });
+            return res.status(404).send({ message: "Order not found." });
         }
 
         const line_items = order.items.map(item => {

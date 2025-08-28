@@ -1,7 +1,6 @@
 const db = require('../models');
 const { sequelize } = require('../models');
 
-// Saare zaroori Models
 const Order = db.Order;
 const OrderItem = db.OrderItem;
 const Cart = db.Cart;
@@ -9,16 +8,12 @@ const CartItem = db.CartItem;
 const Medicine = db.Medicine;
 const Address = db.Address;
 
-// ==========================================================
-// USER FUNCTIONS
-// ==========================================================
 
-// 1. Order Place Karna
 exports.placeOrder = async (req, res) => {
     const userId = req.user.id;
     const { addressId } = req.body;
     if (!addressId) {
-        return res.status(400).send({ message: "Shipping address zaroori hai." });
+        return res.status(400).send({ message: "Shipping address is compulsory." });
     }
     const t = await sequelize.transaction();
     try {
@@ -27,11 +22,11 @@ exports.placeOrder = async (req, res) => {
 
         if (!cart || !cart.CartItems || cart.CartItems.length === 0) {
             await t.rollback();
-            return res.status(400).send({ message: "Aapka cart khali hai." });
+            return res.status(400).send({ message: "Your cart is empty." });
         }
         if (!address) {
             await t.rollback();
-            return res.status(404).send({ message: "Address nahi mila." });
+            return res.status(404).send({ message: "Address not found." });
         }
 
         let totalAmount = 0;
@@ -39,7 +34,7 @@ exports.placeOrder = async (req, res) => {
             const medicine = await Medicine.findByPk(item.medicine_id, { transaction: t });
             if (medicine.inventory_quantity < item.quantity) {
                 await t.rollback();
-                return res.status(400).send({ message: `Stock khatam ho gaya hai: ${medicine.name}` });
+                return res.status(400).send({ message: `Stock is finished: ${medicine.name}` });
             }
             totalAmount += medicine.price * item.quantity;
         }
@@ -68,7 +63,7 @@ exports.placeOrder = async (req, res) => {
         await CartItem.destroy({ where: { cart_id: cart.id } }, { transaction: t });
 
         await t.commit();
-        res.status(201).send({ message: "Order kamyabi se place ho gaya!", order: newOrder });
+        res.status(201).send({ message: "Order placed successfully!", order: newOrder });
 
     } catch (error) {
         await t.rollback();
@@ -107,7 +102,7 @@ exports.getOrderDetails = async (req, res) => {
         });
 
         if (!order) {
-            return res.status(404).send({ message: "Order nahi mila." });
+            return res.status(404).send({ message: "Order not found." });
         }
         res.status(200).send(order);
     } catch (error) {

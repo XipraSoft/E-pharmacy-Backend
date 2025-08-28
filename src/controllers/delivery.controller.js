@@ -9,17 +9,17 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
-            return res.status(400).send({ message: "Email aur password zaroori hain." });
+            return res.status(400).send({ message: "Email and password is compulsory." });
         }
 
         const agent = await DeliveryAgent.findOne({ where: { email: email } });
         if (!agent) {
-            return res.status(404).send({ message: "Agent nahi mila." });
+            return res.status(404).send({ message: "Agent not found." });
         }
 
         const isPasswordCorrect = bcrypt.compareSync(password, agent.password);
         if (!isPasswordCorrect) {
-            return res.status(401).send({ accessToken: null, message: "Password ghalat hai." });
+            return res.status(401).send({ accessToken: null, message: "Wrong Password." });
         }
 
         const token = jwt.sign({ id: agent.id, type: 'delivery_agent' }, process.env.JWT_SECRET, {
@@ -60,9 +60,9 @@ exports.updateTaskStatus = async (req, res) => {
         });
 
         if (updated) {
-            res.status(200).send({ message: `Order ka status '${status}' par update ho gaya hai.` });
+            res.status(200).send({ message: `Order  status '${status}' is updated now.` });
         } else {
-            res.status(404).send({ message: "Order nahi mila ya aap isay update nahi kar sakte." });
+            res.status(404).send({ message: "Order not found or you cannot update it." });
         }
     } catch (error) {
         res.status(500).send({ message: error.message });

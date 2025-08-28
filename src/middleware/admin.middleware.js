@@ -12,12 +12,12 @@ exports.isAdmin = async (req, res, next) => {
             return next();
         } else {
             return res.status(403).send({
-                message: "Error: Admin access zaroori hai!"
+                message: "Error: Admin access is compulsory!"
             });
         }
     } catch (error) {
         return res.status(500).send({
-            message: "Authentication mein masla aa raha hai. User ka role verify nahi ho pa raha."
+            message: "There was a problem verifying admin access."
         });
     }
 };

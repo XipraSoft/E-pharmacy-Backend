@@ -1,7 +1,6 @@
 const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
-// 1. Buniyadi Maloomat (Metadata)
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -12,11 +11,11 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000', // Aapka development server
+        url: 'http://localhost:3000', 
         description: 'Development Server'
       }
     ],
-    components: { // Security ke liye zaroori
+    components: { 
         securitySchemes: {
             bearerAuth: {
                 type: 'http',
@@ -29,14 +28,11 @@ const options = {
         bearerAuth: []
     }]
   },
-  // 2. Kahan se documentation parhni hai (API routes)
-  apis: ['./src/routes/*.js'], // './src/routes' folder ki saari .js files
+  apis: ['./src/routes/*.js'], 
 };
 
-// 3. Swagger specs generate karna
 const swaggerSpec = swaggerJSDoc(options);
 
-// 4. Function jo app.js mein istemal hoga
 const setupSwagger = (app) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };

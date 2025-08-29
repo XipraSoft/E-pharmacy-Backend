@@ -16,6 +16,8 @@ static associate(models) {
     constraints: false,
     scope: { imageable_type: 'user' },
     as: 'images'  }) ;
+    this.hasOne(models.Wishlist, { foreignKey: 'user_id' });
+
 }
 
 }

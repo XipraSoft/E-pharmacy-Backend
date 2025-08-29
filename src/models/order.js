@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
     total_amount: DataTypes.DECIMAL,
     status: DataTypes.STRING,
     shipping_address: DataTypes.TEXT,
+    payment_status:{
+      type: DataTypes.STRING,
+      defaultValue: 'pending'
+    },
      stripe_session_id: {
       type: DataTypes.STRING,
       allowNull: true

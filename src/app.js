@@ -8,6 +8,8 @@ const setupSwagger = require('../swagger.config');
 require('./config/passport.config');
 
 app.use(cors());
+const paymentController = require('./controllers/payment.controller');
+app.post('/api/payment/webhook', express.raw({type: 'application/json'}), paymentController.handleWebhook);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,8 +36,10 @@ app.use('/api/upload', require('./routes/upload.routes'));
 app.use('/api/prescriptions', require('./routes/prescription.routes'));
 app.use('/api/cart', require('./routes/cart.routes'));
 app.use('/api/orders', require('./routes/order.routes'));
-app.use('/api/payment', require('./routes/payment.routes'));
 app.use('/api/wishlist', require('./routes/wishlist.routes'));
+app.use('/api/payment', require('./routes/payment.routes'));
+
+
 
 
 

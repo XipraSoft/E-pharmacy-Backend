@@ -11,11 +11,17 @@ const Address = db.Address;
 
 exports.placeOrder = async (req, res) => {
     const userId = req.user.id;
-    const { addressId } = req.body;
-    if (!addressId) {
-        return res.status(400).send({ message: "Shipping address is compulsory." });
+    const { addressId , paymentMethod} = req.body;
+    if (!addressId || !paymentMethod) {
+        return res.status(400).send({ message: "Shipping address and payment method are compulsory." });
+    }
+    const validPaymentMethods = ['COD', 'Stripe']; 
+    if (!validPaymentMethods.includes(paymentMethod)) {
+        return res.status(400).send({ message: "Invalid payment method." });
     }
     const t = await sequelize.transaction();
+
+    
     try {
         const cart = await Cart.findOne({ where: { user_id: userId }, include: [CartItem] }, { transaction: t });
         const address = await Address.findOne({ where: { id: addressId, user_id: userId } }, { transaction: t });
@@ -39,6 +45,16 @@ exports.placeOrder = async (req, res) => {
             totalAmount += medicine.price * item.quantity;
         }
 
+    let paymentStatus;
+    let orderStatus='Pending';
+    if(paymentMethod==='COD'){
+        paymentStatus='Pending';
+        orderStatus='Processing';
+    }
+    else if(paymentMethod==='Stripe'){
+        paymentStatus='Pending';
+        orderStatus='Pending';
+    }
         const newOrder = await Order.create({
             user_id: userId,
             total_amount: totalAmount,
@@ -63,7 +79,7 @@ exports.placeOrder = async (req, res) => {
         await CartItem.destroy({ where: { cart_id: cart.id } }, { transaction: t });
 
         await t.commit();
-        res.status(201).send({ message: "Order placed successfully!", order: newOrder });
+        res.status(201).send({ message: "Order placed successfully!", order: newOrder , PaymentRequest : paymentMethod==='Stripe'});
 
     } catch (error) {
         await t.rollback();
@@ -85,7 +101,6 @@ exports.getOrderHistory = async (req, res) => {
     }
 };
 
-// 3. User: Ek Specific Order ki Details Dekhna
 exports.getOrderDetails = async (req, res) => {
     try {
         const userId = req.user.id;

@@ -1,13 +1,15 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../models');
 const Order = db.Order;
+const OrderItem = db.OrderItem;
+const Medicine = db.Medicine;
 
 exports.createCheckoutSession = async (req, res) => {
     try {
         const userId = req.user.id;
         const { orderId } = req.body;
 
-        const order = await Order.findOne({ where: { id: orderId, user_id: userId }, include: ['items'] });
+        const order = await Order.findOne({ where: { id: orderId, user_id: userId }, include: [ {model: OrderItem, as : 'items' ,include: [{model :Medicine,}]} ]  });
         if (!order) {
             return res.status(404).send({ message: "Order not found." });
         }
@@ -29,15 +31,15 @@ exports.createCheckoutSession = async (req, res) => {
             payment_method_types: ['card'],
             line_items: line_items,
             mode: 'payment',
-            success_url: `${process.env.CLIENT_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.CLIENT_URL}/order-cancelled`,
+            success_url: `${process.env.CLIENT_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.CLIENT_URL}/order/cancelled`,
             client_reference_id: order.id.toString() 
         });
         
         order.stripe_session_id = session.id;
         await order.save();
         
-        res.status(200).send({ id: session.id });
+        res.status(200).send({ id: session.id , url: session.url });
     } catch (error) {
         res.status(500).send({ message: error.message });
     }

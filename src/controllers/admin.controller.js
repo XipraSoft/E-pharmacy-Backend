@@ -59,7 +59,10 @@ exports.updateOrderStatus = async (req, res) => {
     try {
         const orderId = req.params.id;
         const { status } = req.body;
-
+        const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Assigned'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).send({ message: "Invalid status value." });
+        }
         if (!status) {
             return res.status(400).send({ message: "Status is compulsory." });
         }

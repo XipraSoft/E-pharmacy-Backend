@@ -12,7 +12,7 @@ exports.submitPrescription = async (req, res) => {
             return res.status(400).send({ message: "Image id for prescription is compulsory" });
         }
 
-        const newPrescription = await Prescription.create({
+        const newPrescription = await Prescription.create({  
             user_id: userId,
             status: 'Pending'
         }, { transaction: t });

@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     scope: { imageable_type: 'medicine' },
     as: 'images'
   });
+  this.hasMany(models.WishlistItem, { foreignKey: 'medicine_id' });
     }
   }
   Medicine.init({

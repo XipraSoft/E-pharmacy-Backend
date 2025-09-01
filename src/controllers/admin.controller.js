@@ -178,3 +178,24 @@ exports.updatePrescriptionStatus = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
+
+exports.getLowStockReport = async (req, res) => {
+    try {
+        // Hum threshold ko URL se bhi le sakte hain, ya default set kar sakte hain
+        const threshold = parseInt(req.query.threshold) || 10; // Default threshold 10 hai
+
+        // Hum yahan 'findAll' istemal karenge, 'count' nahi
+        const lowStockMedicines = await Medicine.findAll({
+            where: {
+                inventory_quantity: {
+                    [Op.lte]: threshold // Less than or equal to (lte)
+                }
+            },
+            order: [['inventory_quantity', 'ASC']] // Sab se kam stock wale pehle
+        });
+
+        res.status(200).send(lowStockMedicines);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};

@@ -68,14 +68,8 @@ router.patch('/orders/assign', adminController.assignOrderToAgent);
 
 
 
-/**
- * @swagger
- * tags:
- *   name: 4. Admin
- *   description: Sirf Admin ke liye makhsoos operations. (Authorization Token Zaroori Hai)
- */
 
-router.use([verifyToken, isAdmin]); // Is file ke saare routes Admin-only hain
+router.use([verifyToken, isAdmin]); 
 
 
 router.patch('/orders/status/:id', adminController.updateOrderStatus);
@@ -89,5 +83,9 @@ router.get('/prescriptions', adminController.getAllPrescriptions);
 
 router.patch('/prescriptions/:id/status', adminController.updatePrescriptionStatus);
 
+
+router.get('/reports/low-stock', adminController.getLowStockReport);
+
+module.exports = router;
 
 module.exports = router;

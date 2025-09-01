@@ -2,6 +2,12 @@ const db = require('../models');
 const DeliveryAgent = db.DeliveryAgent;
 const Order = db.Order;
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
+const Medicine = db.Medicine;
+const prescription = db.Prescription;
+const Prescription = db.Prescription;
+const User = db.User;
+
 
 exports.createDeliveryAgent = async (req, res) => {
     try {
@@ -76,6 +82,98 @@ exports.updateOrderStatus = async (req, res) => {
         } else {
             res.status(404).send({ message: "Order not found." });
         }
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// admin.controller.js
+// ... baaki imports ...
+
+// ... baaki functions ...
+
+// NAYA FUNCTION: Dashboard ke liye Data Hasil Karna
+exports.getDashboardStats = async (req, res) => {
+    try {
+        // Sales aur Orders ka count
+        const totalOrders = await Order.count();
+        const totalSales = await Order.sum('total_amount', { where: { payment_status: 'Paid' } });
+        
+        // Pending Prescriptions (Humne prescription ka feature skip kiya tha, to abhi ke liye 0)
+        const pendingPrescriptions = 0; // await Prescription.count({ where: { status: 'Pending' } });
+
+        // Low Inventory Alerts
+        const lowInventoryThreshold = 10;
+        const lowStockItems = await Medicine.count({
+            where: { inventory_quantity: { [Op.lt]: lowInventoryThreshold } }
+        });
+
+        res.status(200).send({
+            totalOrders,
+            totalSales: totalSales || 0,
+            pendingPrescriptions,
+            lowStockItems
+        });
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+exports.getAllPrescriptions = async (req, res) => {
+    try {
+        // Optional: Status se filter karna, e.g., ?status=Pending
+        const { status } = req.query;
+        let whereClause = {};
+        if (status) {
+            whereClause.status = status;
+        }
+
+        const prescriptions = await Prescription.findAll({
+            where: whereClause,
+            include: [{ 
+                model: User, 
+                attributes: ['id', 'name', 'email'] 
+            }],
+            order: [['createdAt', 'DESC']] 
+        });
+
+        res.status(200).send(prescriptions);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+exports.updatePrescriptionStatus = async (req, res) => {
+    try {
+        const prescriptionId = req.params.id;
+        const { status, pharmacist_notes } = req.body;
+
+        const validStatuses = ['Approved', 'Rejected'];
+        if (!status || !validStatuses.includes(status)) {
+            return res.status(400).send({ message: "Status 'Approved' ya 'Rejected' hona chahiye." });
+        }
+
+        if (status === 'Rejected' && !pharmacist_notes) {
+            return res.status(400).send({ message: "Rejected prescriptions ke liye notes (wajah) zaroori hain." });
+        }
+        
+        const prescription = await Prescription.findByPk(prescriptionId);
+        if (!prescription) {
+            return res.status(404).send({ message: "Prescription nahi mili." });
+        }
+
+        prescription.status = status;
+        if (pharmacist_notes) {
+            prescription.pharmacist_notes = pharmacist_notes;
+        }
+        
+        await prescription.save();
+
+        res.status(200).send({ 
+            message: `Prescription kamyabi se '${status}' par set ho gayi hai.`,
+            prescription
+        });
+
     } catch (error) {
         res.status(500).send({ message: error.message });
     }

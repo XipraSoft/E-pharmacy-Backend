@@ -3,7 +3,6 @@ const Wishlist = db.Wishlist;
 const WishlistItem = db.WishlistItem;
 const Medicine = db.Medicine;
 
-// Helper function: User ki wishlist hasil karna ya nayi banana
 const getOrCreateWishlist = async (userId) => {
     let wishlist = await Wishlist.findOne({ where: { user_id: userId } });
     if (!wishlist) {
@@ -13,7 +12,6 @@ const getOrCreateWishlist = async (userId) => {
 };
 
 
-// 1. Wishlist mein Item Add Karna
 exports.addItemToWishlist = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -30,7 +28,6 @@ exports.addItemToWishlist = async (req, res) => {
             return res.status(404).send({ message: "Medicine not found." });
         }
 
-        // Check karein ke item pehle se wishlist mein hai ya nahi
         const [wishlistItem, created] = await WishlistItem.findOrCreate({
             where: { wishlist_id: wishlist.id, medicine_id: medicineId }
         });
@@ -45,7 +42,6 @@ exports.addItemToWishlist = async (req, res) => {
     }
 };
 
-// 2. User ki Wishlist Dekhna
 exports.getWishlist = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -76,11 +72,10 @@ exports.getWishlist = async (req, res) => {
     }
 };
 
-// 3. Wishlist se Item Remove Karna
 exports.removeItemFromWishlist = async (req, res) => {
     try {
         const userId = req.user.id;
-        const medicineIdToRemove = req.params.medicineId; // Yeh Medicine ki ID hai
+        const medicineIdToRemove = req.params.medicineId; 
 
         const wishlist = await Wishlist.findOne({ where: { user_id: userId } });
         if (!wishlist) {

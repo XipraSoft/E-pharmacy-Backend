@@ -1,6 +1,7 @@
 const db = require('../models');
 const Prescription = db.Prescription;
 const Image = db.Image; 
+const User = db.User;
 
 exports.submitPrescription = async (req, res) => {
     const t = await db.sequelize.transaction();

@@ -86,6 +86,13 @@ router.patch('/prescriptions/:id/status', adminController.updatePrescriptionStat
 
 router.get('/reports/low-stock', adminController.getLowStockReport);
 
+// admin.routes.js
+// ...
+
+// --- Discount Management ---
+router.post('/discounts', adminController.createDiscount);
+router.post('/discounts/apply', adminController.applyDiscountToMedicines);
+
 module.exports = router;
 
 module.exports = router;

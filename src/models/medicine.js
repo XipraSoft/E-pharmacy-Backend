@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     as: 'images'
   });
   this.hasMany(models.WishlistItem, { foreignKey: 'medicine_id' });
+  this.belongsToMany(models.Discount, { through: 'MedicineDiscounts', foreignKey: 'medicine_id', as: 'discounts' });
     }
   }
   Medicine.init({

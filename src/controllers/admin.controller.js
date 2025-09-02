@@ -7,8 +7,28 @@ const Medicine = db.Medicine;
 const prescription = db.Prescription;
 const Prescription = db.Prescription;
 const User = db.User;
+const Discount = db.Discount;
 
+// 1. Naya Discount Banana
+exports.createDiscount = async (req, res) => {
+    try {
+        const newDiscount = await Discount.create(req.body);
+        res.status(201).send(newDiscount);
+    } catch (error) { res.status(500).send({ message: error.message }); }
+};
 
+// 2. Ek Discount ko Medicines par Apply Karna
+exports.applyDiscountToMedicines = async (req, res) => {
+    try {
+        const { discountId, medicineIds } = req.body; // medicineIds ek array hoga [1, 2, 5]
+        const discount = await Discount.findByPk(discountId);
+        if (!discount) return res.status(404).send({ message: "Discount nahi mila." });
+
+        await discount.addMedicines(medicineIds); // Sequelize ka magic function
+        
+        res.status(200).send({ message: "Discount kamyabi se apply ho gaya." });
+    } catch (error) { res.status(500).send({ message: error.message }); }
+};
 exports.createDeliveryAgent = async (req, res) => {
     try {
         const { name, email, phone, password } = req.body;

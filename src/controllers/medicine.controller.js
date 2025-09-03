@@ -115,7 +115,6 @@ exports.getAllMedicines = async (req, res) => {
         }]
     });
 
-    // Final price calculate karna
     const medicinesWithFinalPrice = medicines.map(med => {
         const medJSON = med.toJSON();
         let finalPrice = medJSON.price;

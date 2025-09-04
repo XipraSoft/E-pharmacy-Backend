@@ -18,6 +18,7 @@ static associate(models) {
     as: 'images'  }) ;
     this.hasOne(models.Wishlist, { foreignKey: 'user_id' });
     this.hasMany(models.Prescription, { foreignKey: 'user_id' });
+    this.hasMany(models.Order, { as: 'Orders', foreignKey: 'user_id' });
 
 }
 

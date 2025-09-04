@@ -18,4 +18,3 @@ exports.verifyAgentToken = (req, res, next) => {
         return res.status(401).send({ message: "Unauthorized!" });
     }
 };
-

@@ -8,8 +8,8 @@ const prescription = db.Prescription;
 const Prescription = db.Prescription;
 const User = db.User;
 const Discount = db.Discount;
+const Address = db.Address;
 
-// 1. Naya Discount Banana
 exports.createDiscount = async (req, res) => {
     try {
         const newDiscount = await Discount.create(req.body);
@@ -17,14 +17,13 @@ exports.createDiscount = async (req, res) => {
     } catch (error) { res.status(500).send({ message: error.message }); }
 };
 
-// 2. Ek Discount ko Medicines par Apply Karna
 exports.applyDiscountToMedicines = async (req, res) => {
     try {
-        const { discountId, medicineIds } = req.body; // medicineIds ek array hoga [1, 2, 5]
+        const { discountId, medicineIds } = req.body; 
         const discount = await Discount.findByPk(discountId);
         if (!discount) return res.status(404).send({ message: "Discount nahi mila." });
 
-        await discount.addMedicines(medicineIds); // Sequelize ka magic function
+        await discount.addMedicines(medicineIds); 
         
         res.status(200).send({ message: "Discount kamyabi se apply ho gaya." });
     } catch (error) { res.status(500).send({ message: error.message }); }
@@ -107,22 +106,13 @@ exports.updateOrderStatus = async (req, res) => {
     }
 };
 
-// admin.controller.js
-// ... baaki imports ...
-
-// ... baaki functions ...
-
-// NAYA FUNCTION: Dashboard ke liye Data Hasil Karna
 exports.getDashboardStats = async (req, res) => {
     try {
-        // Sales aur Orders ka count
         const totalOrders = await Order.count();
         const totalSales = await Order.sum('total_amount', { where: { payment_status: 'Paid' } });
         
-        // Pending Prescriptions (Humne prescription ka feature skip kiya tha, to abhi ke liye 0)
-        const pendingPrescriptions = 0; // await Prescription.count({ where: { status: 'Pending' } });
+        const pendingPrescriptions = 0; await Prescription.count({ where: { status: 'Pending' } });
 
-        // Low Inventory Alerts
         const lowInventoryThreshold = 10;
         const lowStockItems = await Medicine.count({
             where: { inventory_quantity: { [Op.lt]: lowInventoryThreshold } }
@@ -141,7 +131,6 @@ exports.getDashboardStats = async (req, res) => {
 
 exports.getAllPrescriptions = async (req, res) => {
     try {
-        // Optional: Status se filter karna, e.g., ?status=Pending
         const { status } = req.query;
         let whereClause = {};
         if (status) {
@@ -190,7 +179,7 @@ exports.updatePrescriptionStatus = async (req, res) => {
         await prescription.save();
 
         res.status(200).send({ 
-            message: `Prescription kamyabi se '${status}' par set ho gayi hai.`,
+            message: `Prescription  '${status}'  set successfully.`,
             prescription
         });
 
@@ -201,20 +190,63 @@ exports.updatePrescriptionStatus = async (req, res) => {
 
 exports.getLowStockReport = async (req, res) => {
     try {
-        // Hum threshold ko URL se bhi le sakte hain, ya default set kar sakte hain
-        const threshold = parseInt(req.query.threshold) || 10; // Default threshold 10 hai
+        const threshold = parseInt(req.query.threshold) || 10;
 
-        // Hum yahan 'findAll' istemal karenge, 'count' nahi
         const lowStockMedicines = await Medicine.findAll({
             where: {
                 inventory_quantity: {
-                    [Op.lte]: threshold // Less than or equal to (lte)
+                    [Op.lte]: threshold 
                 }
             },
-            order: [['inventory_quantity', 'ASC']] // Sab se kam stock wale pehle
+            order: [['inventory_quantity', 'ASC']] 
         });
 
         res.status(200).send(lowStockMedicines);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+exports.getAllCustomers = async (req, res) => {
+    try {
+        const customers = await User.findAll({
+            where: { role: 'customer' }, 
+            attributes: ['id', 'name', 'email', 'phone', 'createdAt']
+        });
+        res.status(200).send(customers);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+exports.getCustomerDetails = async (req, res) => {
+    try {
+        const customerId = req.params.id;
+        const customer = await User.findByPk(customerId, {
+            attributes: { exclude: ['password', 'verificationToken', 'resetPasswordToken', 'resetPasswordExpires'] },
+            include: [
+                {
+                    model: Order,
+                    as: 'Orders', 
+                    limit: 10, 
+                    order: [['createdAt', 'DESC']]
+                },
+                {
+                    model: Prescription, 
+                    as: 'Prescriptions', 
+                    limit: 10
+                },
+                {
+                    model: Address, 
+                    as: 'addresses'
+                }
+            ]
+        });
+
+        if (!customer) {
+            return res.status(404).send({ message: "Customer not found." });
+        }
+        res.status(200).send(customer);
     } catch (error) {
         res.status(500).send({ message: error.message });
     }

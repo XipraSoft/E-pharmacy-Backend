@@ -93,6 +93,10 @@ router.get('/reports/low-stock', adminController.getLowStockReport);
 router.post('/discounts', adminController.createDiscount);
 router.post('/discounts/apply', adminController.applyDiscountToMedicines);
 
+router.get('/customers', adminController.getAllCustomers);
+
+router.get('/customers/:id', adminController.getCustomerDetails);
+
 module.exports = router;
 
 module.exports = router;

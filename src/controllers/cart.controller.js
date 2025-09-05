@@ -27,7 +27,7 @@ exports.addItemToCart = async (req, res) => {
         if (!medicine) {
             return res.status(404).send({ message: "Medicine not found." });
         }
-
+        
         let cartItem = await CartItem.findOne({
             where: { cart_id: cart.id, medicine_id: medicineId }
         });
@@ -41,7 +41,7 @@ exports.addItemToCart = async (req, res) => {
             await cartItem.save();
         } else {
             cartItem = await CartItem.create({
-                cart_id: cart.id,
+            cart_id: cart.id,
                 medicine_id: medicineId,
                 quantity: quantity
             });
@@ -83,7 +83,7 @@ exports.updateCartItem = async (req, res) => {
         const { quantity } = req.body;
 
         if (quantity <= 0) {
-            return res.status(400).send({ message: "Quantity must be greater tha 0" });
+            return res.status(400).send({ message: "Quantity must be greater than 0" });
         }
 
         const cart = await Cart.findOne({ where: { user_id: userId } });

@@ -100,38 +100,23 @@ exports.getAllMedicines = async (req, res) => {
             limit: limit,
             offset: offset
         });
-  const medicines = await Medicine.findAll({
-        where: whereClause,
-        order: orderClause,
-        include: [{
-            model: db.Discount,
-            as: 'discounts',
-            where: { // Sirf active aur valid date wale discounts lao
-                is_active: true,
-                start_date: { [Op.lte]: new Date() },
-                end_date: { [Op.gte]: new Date() }
-            },
-            required: false // LEFT JOIN, taake jin par discount nahi hai woh bhi aayein
-        }]
-    });
 
-    const medicinesWithFinalPrice = medicines.map(med => {
-        const medJSON = med.toJSON();
-        let finalPrice = medJSON.price;
+        // Final price calculate karna
+        const medicinesWithFinalPrice = rows.map(med => {
+            const medJSON = med.toJSON();
+            let finalPrice = parseFloat(medJSON.price); // Price ko number mein convert karein
 
-        if (medJSON.discounts && medJSON.discounts.length > 0) {
-            const discount = medJSON.discounts[0]; // Abhi hum sirf pehla valid discount le rahe hain
-            if (discount.discount_type === 'percentage') {
-                finalPrice = finalPrice - (finalPrice * (discount.discount_value / 100));
-            } else if (discount.discount_type === 'fixed') {
-                finalPrice = finalPrice - discount.discount_value;
+            // Agar discount hai aur 0 se bara hai
+            if (medJSON.discount_percentage && parseFloat(medJSON.discount_percentage) > 0) {
+                const discountAmount = finalPrice * (parseFloat(medJSON.discount_percentage) / 100);
+                finalPrice = finalPrice - discountAmount;
             }
-        }
-        medJSON.final_price = Math.max(0, finalPrice); // Price negative na ho
-        delete medJSON.discounts; // Extra data hata dein
-        return medJSON;
-    });
+            
+            medJSON.final_price = finalPrice.toFixed(2); // 2 decimal places tak
+            return medJSON;
+        });
 
+       
         res.status(200).send({
             totalItems: count,
             totalPages: Math.ceil(count / limit),

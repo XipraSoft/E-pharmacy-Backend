@@ -123,3 +123,57 @@ exports.getOrderDetails = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
+
+exports.cancelMyOrder = async (req, res) => {
+    const t = await db.sequelize.transaction();
+    try {
+        const userId = req.user.id;
+        const orderId = req.params.id;
+
+        // Step 1: User ka order dhoondna
+        const order = await Order.findOne({ 
+            where: { id: orderId, user_id: userId } 
+        }, { transaction: t });
+
+        if (!order) {
+            await t.rollback();
+            return res.status(404).send({ message: "Order not found." });
+        }
+
+        // Step 2: Shart check karna - Sirf 'Pending' ya 'Processing' status wale orders hi cancel ho sakte hain
+        if (order.status !== 'Pending' && order.status !== 'Processing') {
+            await t.rollback();
+            return res.status(400).send({ 
+                message: `This order cannot be cancelled as its status is '${order.status}'.` 
+            });
+        }
+
+        // Step 3: Inventory ko wapas add karna (Bohat Zaroori)
+        const orderItems = await OrderItem.findAll({ where: { order_id: orderId } }, { transaction: t });
+        
+        for (const item of orderItems) {
+            // Medicine ki quantity ko wapas barha dena
+            await Medicine.increment(
+                'inventory_quantity', 
+                { 
+                    by: item.quantity, 
+                    where: { id: item.medicine_id },
+                    transaction: t 
+                }
+            );
+        }
+
+        // Step 4: Order ka status 'Cancelled' karna
+        order.status = 'Cancelled';
+        await order.save({ transaction: t });
+        
+        // (Optional: Agar payment pehle ho chuki thi (Stripe se), to yahan refund initiate karne ka logic aayega)
+
+        await t.commit();
+        res.status(200).send({ message: "Your order has been successfully cancelled.", order });
+
+    } catch (error) {
+        await t.rollback();
+        res.status(500).send({ message: error.message });
+    }
+};

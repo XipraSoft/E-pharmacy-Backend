@@ -74,4 +74,6 @@ router.get('/', orderController.getOrderHistory);
  */
 router.get('/:id', orderController.getOrderDetails);
 
+router.patch('/:id/cancel', orderController.cancelMyOrder);
+
 module.exports = router;

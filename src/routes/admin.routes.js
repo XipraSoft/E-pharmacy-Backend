@@ -37,8 +37,7 @@ router.use([verifyToken, isAdmin]); // Is file ke saare routes Admin-only hain
  *       201:
  *         description: Delivery agent kamyabi se add ho gaya.
  */
-router.post('/delivery-agents', adminController.createDeliveryAgent);
-
+router.post('/users', adminController.createUser);
 /**
  * @swagger
  * /api/admin/orders/assign:
@@ -96,7 +95,14 @@ router.post('/discounts/apply', adminController.applyDiscountToMedicines);
 router.get('/customers', adminController.getAllCustomers);
 
 router.get('/customers/:id', adminController.getCustomerDetails);
+// ...
 
-module.exports = router;
+// --- Reports ---
+router.get('/reports/low-stock', adminController.getLowStockReport);
+
+
+router.get('/reports/best-sellers', adminController.getBestSellingProducts);
+
+
 
 module.exports = router;

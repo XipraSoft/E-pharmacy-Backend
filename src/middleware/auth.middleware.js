@@ -31,6 +31,23 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-module.exports = {
-    verifyToken
+// 'exports.' zaroori hai
+const hasRole = (requiredRole) => {
+    return async (req, res, next) => {
+        try {
+            // User model ko yahan import karna zaroori hai
+            const User = require('../models').User; 
+            
+            const user = await User.findByPk(req.user.id);
+            if (user && user.role === requiredRole) {
+                return next();
+            }
+            return res.status(403).send({ message: `Aapko '${requiredRole}' role ki zaroorat hai.` });
+        } catch (error) {
+            return res.status(500).send({ message: "Authentication mein masla hai." });
+        }
+    };
 };
+module.exports = {
+    verifyToken, hasRole
+}; 

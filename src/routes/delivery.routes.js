@@ -1,36 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const deliveryController = require('../controllers/delivery.controller');
-const { verifyAgentToken } = require('../middleware/delivery.middleware');
+const { verifyToken, hasRole } = require('../middleware/auth.middleware');
 
-/**
- * @swagger
- * tags:
- *   name: 5. Delivery Agent
- *   description: Delivery agents ke liye makhsoos operations.
- */
-
-/**
- * @swagger
- * /api/delivery/login:
- *   post:
- *     summary: Delivery agent ko login karwa kar token hasil karna
- *     tags: [5. Delivery Agent]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email, password]
- *             properties:
- *               email: { type: string, example: "agent1@example.com" }
- *               password: { type: string, example: "agentpassword" }
- *     responses:
- *       200:
- *         description: Kamyab login, agent ka accessToken wapas milega.
- */
-router.post('/login', deliveryController.login);
 
 /**
  * @swagger
@@ -44,7 +16,7 @@ router.post('/login', deliveryController.login);
  *       200:
  *         description: Agent ko assign kiye gaye orders ka array.
  */
-router.get('/tasks', [verifyAgentToken], deliveryController.getMyTasks);
+router.get('/tasks', [verifyToken, hasRole('delivery_agent')], deliveryController.getMyTasks);
 
 /**
  * @swagger
@@ -73,6 +45,6 @@ router.get('/tasks', [verifyAgentToken], deliveryController.getMyTasks);
  *       200:
  *         description: Order ka status kamyabi se update ho gaya.
  */
-router.patch('/tasks/:orderId/status', [verifyAgentToken], deliveryController.updateTaskStatus);
+router.patch('/tasks/:orderId/status',  [verifyToken, hasRole('delivery_agent')], deliveryController.updateTaskStatus);
 
 module.exports = router;

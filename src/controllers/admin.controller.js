@@ -28,36 +28,39 @@ exports.applyDiscountToMedicines = async (req, res) => {
         res.status(200).send({ message: "Discount kamyabi se apply ho gaya." });
     } catch (error) { res.status(500).send({ message: error.message }); }
 };
-exports.createDeliveryAgent = async (req, res) => {
+exports.createUser = async (req, res) => {
     try {
-        const { name, email, phone, password } = req.body;
-        if (!name || !email || !phone || !password) {
-            return res.status(400).send({ message: "All fields are compulsory." });
+        const { name, email, phone, password, role } = req.body;
+        if (!role || (role !== 'customer' && role !== 'delivery_agent')) {
+            return res.status(400).send({ message: "Role 'customer' ya 'delivery_agent' hona zaroori hai." });
         }
+        // ... baaki validation ...
         const hashedPassword = await bcrypt.hash(password, 10);
-        const agent = await DeliveryAgent.create({ name, email, phone, password: hashedPassword });
-        res.status(201).send({ message: "Delivery Agent added successfully!", agent });
+        const newUser = await User.create({ name, email, phone, password: hashedPassword, role, isVerified: true });
+        res.status(201).send({ message: "User kamyabi se create ho gaya!", user: newUser });
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
     }
 };
-
 exports.assignOrderToAgent = async (req, res) => {
     try {
         const { orderId, agentId } = req.body;
         const order = await Order.findByPk(orderId);
-        const agent = await DeliveryAgent.findByPk(agentId);
+        if (!order) {
+            return res.status(404).send({ message: `Order ID: ${orderId} nahi mila.` });
+        }
 
-        if (!order || !agent) {
-            return res.status(404).send({ message: "Order or Agent not found." });
+        // Agent ko Users table se dhoondna (role check ke saath)
+        const agent = await User.findOne({ where: { id: agentId, role: 'delivery_agent' } });
+        if (!agent) {
+            return res.status(404).send({ message: `Delivery Agent ID: ${agentId} nahi mila ya yeh user ek agent nahi hai.` });
         }
 
         order.delivery_agent_id = agentId;
-        order.status = 'Assigned'; 
+        order.status = 'Assigned';
         await order.save();
         
-        res.status(200).send({ message: `Order #${orderId} assigned to Agent #${agentId} .` });
-
+        res.status(200).send({ message: `Order #${orderId} kamyabi se Agent #${agentId} ko assign ho gaya.` });
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
     }
@@ -85,6 +88,8 @@ exports.updateOrderStatus = async (req, res) => {
         const orderId = req.params.id;
         const { status } = req.body;
         const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Assigned'];
+        
+        
         if (!validStatuses.includes(status)) {
             return res.status(400).send({ message: "Invalid status value." });
         }
@@ -247,6 +252,38 @@ exports.getCustomerDetails = async (req, res) => {
             return res.status(404).send({ message: "Customer not found." });
         }
         res.status(200).send(customer);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// ==========================================================
+exports.getBestSellingProducts = async (req, res) => {
+    try {
+        // Hum limit le sakte hain taake top 5 ya top 10 products dikhayein
+        const limit = parseInt(req.query.limit) || 10; // Default top 10
+
+        const bestSellers = await OrderItem.findAll({
+            // Step 1: Attributes ko define karna
+            attributes: [
+                'medicine_id', // Humein medicine_id chahiye
+                // Step 2: 'quantity' column ko sum karna aur naya naam 'total_sold' dena
+                [sequelize.fn('SUM', sequelize.col('quantity')), 'total_sold']
+            ],
+            // Step 3: 'medicine_id' ke hisab se group karna
+            group: ['medicine_id', 'Medicine.id'], // 'Medicine.id' group by ke liye zaroori hai
+            // Step 4: Nateeje ko 'total_sold' ke hisab se sort karna
+            order: [[sequelize.fn('SUM', sequelize.col('quantity')), 'DESC']],
+            // Step 5: Limit set karna
+            limit: limit,
+            // Step 6: Medicine ki details hasil karne ke liye JOIN karna
+            include: [{
+                model: Medicine,
+                attributes: ['name', 'brand', 'price'] // Sirf zaroori details
+            }]
+        });
+
+        res.status(200).send(bestSellers);
     } catch (error) {
         res.status(500).send({ message: error.message });
     }

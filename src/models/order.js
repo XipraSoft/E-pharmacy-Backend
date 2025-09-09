@@ -6,9 +6,15 @@ module.exports = (sequelize, DataTypes) => {
   class Order extends Model {
     
     static associate(models) {
-  this.belongsTo(models.DeliveryAgent, { foreignKey: 'delivery_agent_id', as: 'agent' });
-   this.belongsTo(models.User, { foreignKey: 'user_id' });
-  this.hasMany(models.OrderItem, { foreignKey: 'order_id', as: 'items' });
+ this.belongsTo(models.User, { 
+    foreignKey: 'delivery_agent_id', 
+    as: 'agent'
+  });  this.belongsTo(models.User, { 
+    foreignKey: 'user_id', 
+    as: 'customer'
+  });
+    this.hasMany(models.OrderItem, { foreignKey: 'order_id', as: 'items' });
+
 }
   }
   Order.init({

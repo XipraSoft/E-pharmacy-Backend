@@ -19,6 +19,15 @@ static associate(models) {
     this.hasOne(models.Wishlist, { foreignKey: 'user_id' });
     this.hasMany(models.Prescription, { foreignKey: 'user_id' });
     this.hasMany(models.Order, { as: 'Orders', foreignKey: 'user_id' });
+    this.hasMany(models.Order, { 
+    foreignKey: 'user_id', 
+    as: 'placedOrders' // Naam badal diya taake saaf rahe
+  });
+  this.hasMany(models.Order, { 
+    foreignKey: 'delivery_agent_id', 
+    as: 'deliveryTasks' 
+  });
+    
 
 }
 

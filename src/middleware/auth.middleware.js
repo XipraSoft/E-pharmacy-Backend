@@ -31,11 +31,9 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-// 'exports.' zaroori hai
 const hasRole = (requiredRole) => {
     return async (req, res, next) => {
         try {
-            // User model ko yahan import karna zaroori hai
             const User = require('../models').User; 
             
             const user = await User.findByPk(req.user.id);

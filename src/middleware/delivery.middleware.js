@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 exports.verifyAgentToken = (req, res, next) => {
     let token = req.headers['authorization'];
     if (!token) {
-        return res.status(403).send({ message: "Koi token nahi diya gaya!" });
+        return res.status(403).send({ message: "Token is compulsory!" });
     }
     try {
         token = token.split(' ')[1];

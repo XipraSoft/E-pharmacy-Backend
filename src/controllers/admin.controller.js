@@ -266,24 +266,100 @@ exports.getBestSellingProducts = async (req, res) => {
         const bestSellers = await OrderItem.findAll({
             // Step 1: Attributes ko define karna
             attributes: [
-                'medicine_id', // Humein medicine_id chahiye
-                // Step 2: 'quantity' column ko sum karna aur naya naam 'total_sold' dena
+                'medicine_id',
                 [sequelize.fn('SUM', sequelize.col('quantity')), 'total_sold']
             ],
-            // Step 3: 'medicine_id' ke hisab se group karna
-            group: ['medicine_id', 'Medicine.id'], // 'Medicine.id' group by ke liye zaroori hai
-            // Step 4: Nateeje ko 'total_sold' ke hisab se sort karna
+            group: ['medicine_id', 'Medicine.id'], 
             order: [[sequelize.fn('SUM', sequelize.col('quantity')), 'DESC']],
-            // Step 5: Limit set karna
             limit: limit,
-            // Step 6: Medicine ki details hasil karne ke liye JOIN karna
             include: [{
                 model: Medicine,
-                attributes: ['name', 'brand', 'price'] // Sirf zaroori details
+                attributes: ['name', 'brand', 'price'] 
             }]
         });
 
         res.status(200).send(bestSellers);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+exports.getStockReport = async (req, res) => {
+    try {
+        const stockReport = await Medicine.findAll({
+            attributes: ['id', 'name', 'brand', 'inventory_quantity'],
+            order: [['inventory_quantity', 'ASC']] // Kam stock wale pehle
+        });
+        res.status(200).send(stockReport);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+// 2. Expiration Report (Jald expire hone wali medicines)
+exports.getExpirationReport = async (req, res) => {
+    try {
+        // Hum un medicines ko dhoondenge jo agle X dino mein expire ho rahi hain
+        const days = parseInt(req.query.days) || 30; // Default: agle 30 din
+        
+        const currentDate = new Date();
+        const expirationLimitDate = new Date();
+        expirationLimitDate.setDate(currentDate.getDate() + days);
+
+        const expiringSoon = await Medicine.findAll({
+            where: {
+                expiry_date: {
+                    [Op.between]: [currentDate, expirationLimitDate]
+                }
+            },
+            order: [['expiry_date', 'ASC']] // Jo sab se jald expire ho rahi hain, woh pehle
+        });
+
+        res.status(200).send(expiringSoon);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+
+
+
+exports.getSalesReport = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+
+        let whereClause = {
+            payment_status: 'Paid' // Sirf paid orders ki sale count karni hai
+        };
+
+        if (startDate && endDate) {
+            whereClause.createdAt = {
+                [Op.between]: [new Date(startDate), new Date(endDate)]
+            };
+        }
+
+        // Step 2: Sales ko calculate karna
+        // 2.1: Total Sales (Raqam)
+        const totalSales = await Order.sum('total_amount', { where: whereClause });
+
+        // 2.2: Total Orders (Ginti)
+        const totalOrders = await Order.count({ where: whereClause });
+        
+        // 2.3: Har din ke hisab se sales (Graph ke liye)
+        const salesByDay = await Order.findAll({
+            where: whereClause,
+            attributes: [
+                [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
+                [sequelize.fn('SUM', sequelize.col('total_amount')), 'total']
+            ],
+            group: [sequelize.fn('DATE', sequelize.col('createdAt'))],
+            order: [[sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']]
+        });
+        
+        res.status(200).send({
+            totalSales: totalSales || 0,
+            totalOrders: totalOrders || 0,
+            salesByDay: salesByDay
+        });
     } catch (error) {
         res.status(500).send({ message: error.message });
     }

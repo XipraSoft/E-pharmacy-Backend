@@ -36,7 +36,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(5, 2),
       allowNull: true,
       defaultValue: 0
+    },
+   
+    expiry_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: false
     }
+// ...
   }, {
     sequelize,
     modelName: 'Medicine',

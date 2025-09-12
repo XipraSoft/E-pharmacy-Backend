@@ -103,6 +103,13 @@ router.get('/reports/low-stock', adminController.getLowStockReport);
 
 router.get('/reports/best-sellers', adminController.getBestSellingProducts);
 
+router.get('/reports/stock', adminController.getStockReport);
+
+router.get('/reports/expiring-soon', adminController.getExpirationReport);
+
+router.get('/reports/sales', adminController.getSalesReport);
+
+
 
 
 module.exports = router;

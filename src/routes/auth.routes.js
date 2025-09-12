@@ -1,146 +1,157 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/auth.controller');
 const passport = require('passport');
+const authController = require('../controllers/auth.controller');
+
 /**
  * @swagger
  * tags:
- *   name: 1. Authentication
- *   description: User registration, login, verification, and password management.
+ *   name: Authentication
+ *   description: User registration, login, and social auth
  */
 
-// --- Registration Flow ---
+// --- Email/Password Authentication ---
+
 /**
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Step 1 - Ek naya user register karna
- *     tags: [1. Authentication]
+ *     summary: Register a new user
+ *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: 'object', required: ['name', 'email', 'phone', 'password'], properties: { name: { type: 'string' }, email: { type: 'string' }, phone: { type: 'string' }, password: { type: 'string' } } }
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string, example: "Test User" }
+ *               email: { type: string, example: "test@example.com" }
+ *               phone: { type: string, example: "03001234567" }
+ *               password: { type: string, example: "password123" }
  *     responses:
- *       201: { description: "Registration successful! An OTP has been sent to your email." }
+ *       201:
+ *         description: User registered. OTP sent for verification.
  */
 router.post('/register', authController.register);
 
 /**
  * @swagger
- * /api/auth/verify-otp:
- *   post:
- *     summary: Step 2 - Registration ke baad email ko OTP se verify karna
- *     tags: [1. Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema: { type: 'object', required: ['email', 'otp'], properties: { email: { type: 'string' }, otp: { type: 'string' } } }
- *     responses:
- *       200: { description: "Email verified successfully! You can now log in." }
- */
-router.post('/verify-otp', authController.verifyOtp);
-
-/**
- * @swagger
- * /api/auth/resend-otp:
- *   post:
- *     summary: (Optional) Verification ke liye naya OTP email par bhejna
- *     tags: [1. Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema: { type: 'object', required: ['email'], properties: { email: { type: 'string' } } }
- *     responses:
- *       200: { description: "A new OTP has been sent to your email address." }
- */
-router.post('/resend-otp', authController.resendOtp);
-
-
-// --- Login Flow ---
-/**
- * @swagger
  * /api/auth/login:
  *   post:
- *     summary: User ko login karwa kar token hasil karna
- *     tags: [1. Authentication]
+ *     summary: Log in a user
+ *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } }
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email: { type: string, example: "test@example.com" }
+ *               password: { type: string, example: "password123" }
  *     responses:
- *       200: { description: "Login successful!" }
- *       403: { description: "Account is not verified." }
+ *       200:
+ *         description: Login successful.
  */
 router.post('/login', authController.login);
 
 
-// --- Password Reset Flow ---
+// --- OTP & Password Reset ---
+
 /**
  * @swagger
- * /api/auth/forgot-password:
+ * /api/auth/handle-otp:
  *   post:
- *     summary: Step 1 - Password bhoolne par reset ke liye OTP bhejna
- *     tags: [1. Authentication]
+ *     summary: Verify or Resend OTP
+ *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: 'object', required: ['email'], properties: { email: { type: 'string' } } }
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email: { type: string }
+ *               otp: { type: string }
+ *               type: { type: string, enum: [registration, password_reset] }
  *     responses:
- *       200: { description: "An OTP has been sent to your email." }
+ *       200:
+ *         description: Success.
+ */
+router.post('/handle-otp', authController.handleOtp);
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset OTP
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email: { type: string, example: "test@example.com" }
+ *     responses:
+ *       200:
+ *         description: OTP sent.
  */
 router.post('/forgot-password', authController.forgotPassword);
 
 /**
  * @swagger
- * /api/auth/verify-password-otp:
- *   post:
- *     summary: Step 2 - Password reset ke OTP ko verify karna aur ek temporary token hasil karna
- *     tags: [1. Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema: { type: 'object', required: ['email', 'otp'], properties: { email: { type: 'string' }, otp: { type: 'string' } } }
- *     responses:
- *       200: { description: "OTP verified. Use the returned tempToken to set a new password." }
- */
-router.post('/verify-password-otp', authController.verifyPasswordResetOtp);
-
-/**
- * @swagger
  * /api/auth/reset-password:
  *   post:
- *     summary: Step 3 - Temporary token ka istemal karke naya password set karna
- *     tags: [1. Authentication]
+ *     summary: Set a new password using a reset token
+ *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: 'object', required: ['tempToken', 'password'], properties: { tempToken: { type: 'string' }, password: { type: 'string' } } }
+ *           schema:
+ *             type: object
+ *             properties:
+ *               resetToken: { type: string }
+ *               password: { type: string, example: "newPassword123" }
  *     responses:
- *       200: { description: "Password has been reset successfully." }
+ *       200:
+ *         description: Password reset successfully.
  */
 router.post('/reset-password', authController.resetPassword);
 
 
+// --- Social Logins ---
 
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Log in with Google
+ *     tags: [Authentication]
+ *     description: This will redirect to Google's login page.
+ *     responses:
+ *       302:
+ *         description: Redirecting to Google.
+ */
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google/callback', passport.authenticate('google', { session: false }), authController.socialLoginSuccess);
 
-router.get('/google/callback', 
-    passport.authenticate('google', { session: false, failureRedirect: '/login-failed' }),
-    authController.socialLoginSuccess 
-);
+/**
+ * @swagger
+ * /api/auth/facebook:
+ *   get:
+ *     summary: Log in with Facebook
+ *     tags: [Authentication]
+ *     description: This will redirect to Facebook's login page.
+ *     responses:
+ *       302:
+ *         description: Redirecting to Facebook.
+ */
+router.get('/facebook', passport.authenticate('facebook', { scope: ['public_profile', 'email'] }));
+router.get('/facebook/callback', passport.authenticate('facebook', { session: false }), authController.socialLoginSuccess);
 
-
-router.get('/facebook', passport.authenticate('facebook', { scope: ['public_profile','email'] }));
-router.get('/facebook/callback',
-    passport.authenticate('facebook', { session: false }),
-    authController.socialLoginSuccess
-);
 
 module.exports = router;

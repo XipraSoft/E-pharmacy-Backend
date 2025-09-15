@@ -42,7 +42,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATEONLY,
       allowNull: false
     }
-// ...
   }, {
     sequelize,
     modelName: 'Medicine',

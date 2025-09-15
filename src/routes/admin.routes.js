@@ -109,6 +109,9 @@ router.get('/reports/expiring-soon', adminController.getExpirationReport);
 
 router.get('/reports/sales', adminController.getSalesReport);
 
+router.patch('/orders/:id/return', adminController.updateReturnStatus);
+
+
 
 
 

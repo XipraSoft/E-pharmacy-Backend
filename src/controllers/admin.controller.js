@@ -364,3 +364,32 @@ exports.getSalesReport = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
+
+exports.updateReturnStatus = async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const { status } = req.body; // 'Approved' ya 'Rejected'
+
+        const validStatuses = ['Approved', 'Rejected'];
+        if (!status || !validStatuses.includes(status)) {
+            return res.status(400).send({ message: "Status 'Approved' ya 'Rejected' hona chahiye."});
+        }
+        
+        const order = await Order.findByPk(orderId);
+        if (!order || order.return_status !== 'Requested') {
+            return res.status(404).send({ message: "Aesi koi pending return request nahi mili."});
+        }
+
+        order.return_status = status;
+        await order.save();
+
+        // **FUTURE LOGIC:**
+        // Agar return 'Approved' hai, to inventory wapas add karne
+        // aur user ko refund initiate karne ka logic yahan aayega.
+        // Abhi ke liye, hum sirf status update kar rahe hain.
+        
+        res.status(200).send({ message: `Return request kamyabi se '${status}' par set ho gayi hai.` });
+    } catch (error) { 
+        res.status(500).send({ message: error.message }); 
+    }
+};

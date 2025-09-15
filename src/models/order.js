@@ -29,7 +29,15 @@ module.exports = (sequelize, DataTypes) => {
      stripe_session_id: {
       type: DataTypes.STRING,
       allowNull: true
-    }
+    },
+    return_status: {
+  type: DataTypes.STRING,
+  allowNull: true
+},
+return_reason: {
+  type: DataTypes.TEXT,
+  allowNull: true
+}
     
   }, {
     sequelize,

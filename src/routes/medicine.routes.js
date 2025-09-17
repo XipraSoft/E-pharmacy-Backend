@@ -3,6 +3,7 @@ const router = express.Router();
 const medicineController = require('../controllers/medicine.controller');
 const { verifyToken } = require('../middleware/auth.middleware');
 const { isAdmin } = require('../middleware/admin.middleware');
+const upload = require('../middleware/upload.middleware');
 /**
  * @swagger
  * tags:
@@ -158,5 +159,7 @@ router.patch('/:id', [verifyToken, isAdmin], medicineController.updateMedicine);
  *         description: Medicine kamyabi se delete ho gayi.
  */
 router.delete('/:id', [verifyToken, isAdmin], medicineController.deleteMedicine);
+
+router.post('/', [verifyToken, isAdmin, upload.single('image')], medicineController.createMedicine);
 
 module.exports = router;

@@ -111,6 +111,8 @@ router.get('/reports/sales', adminController.getSalesReport);
 
 router.patch('/orders/:id/return', adminController.updateReturnStatus);
 
+router.get('/orders', adminController.getAllOrders);
+
 
 
 

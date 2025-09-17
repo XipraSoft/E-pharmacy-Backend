@@ -9,6 +9,9 @@ const Prescription = db.Prescription;
 const User = db.User;
 const Discount = db.Discount;
 const Address = db.Address;
+const OrderItem = db.OrderItem;
+const sequelize = db.sequelize;
+const sendEmail = require('../utils/email');
 
 exports.createDiscount = async (req, res) => {
     try {
@@ -32,12 +35,11 @@ exports.createUser = async (req, res) => {
     try {
         const { name, email, phone, password, role } = req.body;
         if (!role || (role !== 'customer' && role !== 'delivery_agent')) {
-            return res.status(400).send({ message: "Role 'customer' ya 'delivery_agent' hona zaroori hai." });
+            return res.status(400).send({ message: "Role is compulsory" });
         }
-        // ... baaki validation ...
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await User.create({ name, email, phone, password: hashedPassword, role, isVerified: true });
-        res.status(201).send({ message: "User kamyabi se create ho gaya!", user: newUser });
+        res.status(201).send({ message: "Delivery Agent created successfully", user: newUser });
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
     }
@@ -60,7 +62,7 @@ exports.assignOrderToAgent = async (req, res) => {
         order.status = 'Assigned';
         await order.save();
         
-        res.status(200).send({ message: `Order #${orderId} kamyabi se Agent #${agentId} ko assign ho gaya.` });
+        res.status(200).send({ message: `Order #${orderId} assigned to #${agentId} ` });
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
     }
@@ -101,7 +103,34 @@ exports.updateOrderStatus = async (req, res) => {
             where: { id: orderId }
         });
 
-        if (updated) {
+       if (updated) {
+            // ==========================================================
+            // NAYI EMAIL NOTIFICATION LOGIC
+            // ==========================================================
+            try {
+                const order = await Order.findByPk(orderId, { include: [User] });
+                if (order && order.User) {
+                    let message, subject;
+                    if (status === 'Shipped') {
+                        subject = `Your Order #${order.id} has been shipped!`;
+                        message = `Hi ${order.User.name},\n\nGood news! Your order #${order.id} is now on its way.`;
+                    } else if (status === 'Delivered') {
+                        subject = `Your Order #${order.id} has been delivered!`;
+                        message = `Hi ${order.User.name},\n\nYour order #${order.id} has been successfully delivered. Thank you for shopping with us!`;
+                    }
+
+                    // Sirf zaroori status par hi email bhejein
+                    if (message) {
+                        await sendEmail({
+                            email: order.User.email,
+                            subject: subject,
+                            message: message
+                        });
+                    }
+                }
+            } catch (emailError) {
+                console.error("Order status update email bhejne mein error aayi:", emailError);
+            }
             res.status(200).send({ message: `Order status'${status}' updated successfully` });
         } else {
             res.status(404).send({ message: "Order not found." });
@@ -182,6 +211,24 @@ exports.updatePrescriptionStatus = async (req, res) => {
         }
         
         await prescription.save();
+
+         try {
+            const user = await User.findByPk(prescription.user_id);
+            if (user) {
+                let message, subject;
+                if (status === 'Approved') {
+                    subject = `Your Prescription has been Approved`;
+                    message = `Hi ${user.name},\n\nGood news! Your uploaded prescription has been reviewed and approved by our pharmacist. You can now proceed with your order.`;
+                } else { // Rejected
+                    subject = `Action Required: Your Prescription has been Rejected`;
+                    message = `Hi ${user.name},\n\nYour uploaded prescription has been rejected for the following reason:\n\n"${pharmacist_notes}"\n\nPlease upload a new, valid prescription to proceed.`;
+                }
+                
+                await sendEmail({ email: user.email, subject: subject, message: message });
+            }
+        } catch (emailError) {
+            console.error("Prescription status update email bhejne mein error aayi:", emailError);
+        }
 
         res.status(200).send({ 
             message: `Prescription  '${status}'  set successfully.`,

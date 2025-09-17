@@ -2,14 +2,40 @@ const db = require('../models');
 const Medicine = db.Medicine;
 const { Op } = require('sequelize'); 
 const moment = require('moment');
+const Image = db.Image;
 
 
 exports.createMedicine = async (req, res) => {
     const t = await db.sequelize.transaction();
     try {
-        const { name, price, category, imageId } = req.body;
+        const { 
+            name, 
+            brand, 
+            description,
+            price, 
+            dosage,
+            side_effects,
+            requires_prescription,
+            inventory_quantity,
+            expiry_date, 
+            category,
+            discount_percentage,
+            imageId 
+        } = req.body;
 
-        const newMedicine = await Medicine.create({ name, price, category }, { transaction: t });
+         const newMedicine = await Medicine.create({ 
+            name, 
+            brand,
+            description,
+            price, 
+            dosage,
+            side_effects,
+            requires_prescription,
+            inventory_quantity,
+            expiry_date, 
+            category,
+            discount_percentage
+        }, { transaction: t });
 
         if (imageId) {
             await Image.update(
@@ -19,7 +45,14 @@ exports.createMedicine = async (req, res) => {
         }
 
         await t.commit();
-        res.status(201).send(newMedicine);
+          const finalMedicineResponse = await Medicine.findByPk(newMedicine.id, {
+        include: [{
+            model: Image,
+            as: 'images',
+            attributes: ['id', 'file_path']
+        }]
+    });
+        res.status(201).send(finalMedicineResponse);
     } catch (error) {
         await t.rollback();
         res.status(500).send({ message: error.message });
@@ -36,7 +69,7 @@ exports.updateMedicine = async (req, res) => {
         });
 
         if (updatedRows === 1) {
-            res.status(200).send({ message: "Medicine deleted successfully." });
+            res.status(200).send({ message: "Medicine updated successfully." });
         } else {
             res.status(404).send({ message: `Medicine ID: ${medicineId} not found.` });
         }

@@ -10,9 +10,9 @@ db.sequelize.sync()
     .then(() => {
         console.log("Database synced successfully.");
         
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}.`);
-            console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+      app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT} and listening on all interfaces.`);
+        console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
              scheduleLowStockAlert();
         });
     })

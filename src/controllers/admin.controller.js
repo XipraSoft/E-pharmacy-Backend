@@ -77,7 +77,12 @@ exports.getAllOrders = async (req, res) => {
 
         const orders = await Order.findAll({
             where: whereClause,
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+
+            include: [{
+                model: User,
+                as: 'customer', 
+                attributes: ['id', 'name', 'email']  }]
         });
         res.status(200).send(orders);
     } catch (error) {
@@ -335,7 +340,7 @@ exports.getStockReport = async (req, res) => {
     try {
         const stockReport = await Medicine.findAll({
             attributes: ['id', 'name', 'brand', 'inventory_quantity'],
-            order: [['inventory_quantity', 'ASC']] // Kam stock wale pehle
+            order: [['inventory_quantity', 'ASC']] 
         });
         res.status(200).send(stockReport);
     } catch (error) {
@@ -343,11 +348,9 @@ exports.getStockReport = async (req, res) => {
     }
 };
 
-// 2. Expiration Report (Jald expire hone wali medicines)
 exports.getExpirationReport = async (req, res) => {
     try {
-        // Hum un medicines ko dhoondenge jo agle X dino mein expire ho rahi hain
-        const days = parseInt(req.query.days) || 30; // Default: agle 30 din
+        const days = parseInt(req.query.days) || 30; 
         
         const currentDate = new Date();
         const expirationLimitDate = new Date();
@@ -375,7 +378,7 @@ exports.getSalesReport = async (req, res) => {
         const { startDate, endDate } = req.query;
 
         let whereClause = {
-            payment_status: 'Paid' // Sirf paid orders ki sale count karni hai
+            payment_status: 'Paid' 
         };
 
         if (startDate && endDate) {
@@ -438,5 +441,21 @@ exports.updateReturnStatus = async (req, res) => {
         res.status(200).send({ message: `Return request kamyabi se '${status}' par set ho gayi hai.` });
     } catch (error) { 
         res.status(500).send({ message: error.message }); 
+    }
+};
+
+
+exports.getAllDeliveryAgents = async (req, res) => {
+    try {
+        const agents = await User.findAll({
+            where: {
+                role: 'delivery_agent'
+            },
+            attributes: ['id', 'name', 'email', 'phone']
+        });
+
+        res.status(200).send(agents);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
     }
 };

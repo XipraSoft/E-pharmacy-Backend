@@ -4,7 +4,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sendEmail = require('../utils/email');
 const { Op } = require('sequelize');
-
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const axios = require('axios');
 const User = db.User;
 
 exports.register = async (req, res) => {
@@ -178,7 +180,97 @@ exports.resetPassword = async (req, res) => {
         res.status(500).send({ message: "An error occurred." });
     }
 };
+exports.verifyGoogleToken = async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).send({ message: "Google ID is compulsory." });
+        }
 
+        // Token ko verify karna
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        
+        const payload = ticket.getPayload();
+        const { name, email } = payload;
+        
+        // User ko dhoondna ya naya banana
+        const [user, created] = await User.findOrCreate({
+            where: { email: email },
+            defaults: {
+                name: name,
+                email: email,
+                password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                isVerified: true
+            }
+        });
+
+        // Apna JWT accessToken banana
+        const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+        res.status(200).send({
+            message: created ? "User registered and logged in successfully." : "User logged in successfully.",
+            data: { user, accessToken }
+        });
+
+    } catch (error) {
+        console.error("Google token verification mein error:", error);
+        res.status(401).send({ message: "Google token ghalat hai ya expire ho chuka hai." });
+    }
+};
+
+// src/controllers/auth.controller.js
+ // Axios ko import karein
+// ...
+
+// NAYA FUNCTION: Facebook Access Token ko Verify aur Login/Register karna
+exports.verifyFacebookToken = async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).send({ message: "Facebook token zaroori hai." });
+        }
+
+        // Step 1: Facebook ki Graph API ko call karke token ko "debug" karna
+        // Yeh token ki validity aur user ki details wapas karta hai
+        const { data } = await axios.get(
+            `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${token}`
+        );
+
+        // 'data' object ke andar user ki maloomat hongi
+        const { name, email, picture } = data;
+
+        if (!email) {
+            return res.status(400).send({ message: "Facebook se email hasil nahi ho saka. User ki privacy settings check karein." });
+        }
+        
+        // Step 2: User ko dhoondna ya naya banana (bilkul Google jaisa)
+        const [user, created] = await User.findOrCreate({
+            where: { email: email },
+            defaults: {
+                name: name,
+                email: email,
+                avatar_url: picture.data.url,
+                password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                isVerified: true
+            }
+        });
+
+        // Step 3: Apna JWT accessToken banana
+        const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+        res.status(200).send({
+            message: created ? "User registered and logged in successfully via Facebook." : "User logged in successfully via Facebook.",
+            data: { user, accessToken }
+        });
+
+    } catch (error) {
+        console.error("Facebook token verification mein error:", error.response ? error.response.data : error.message);
+        res.status(401).send({ message: "Facebook token ghalat hai ya expire ho chuka hai." });
+    }
+};
 exports.socialLoginSuccess = (req, res) => {
     const user = req.user;
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });

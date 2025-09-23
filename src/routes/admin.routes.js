@@ -113,6 +113,7 @@ router.patch('/orders/:id/return', adminController.updateReturnStatus);
 
 router.get('/orders', adminController.getAllOrders);
 
+router.get('/delivery-agents', adminController.getAllDeliveryAgents);
 
 
 

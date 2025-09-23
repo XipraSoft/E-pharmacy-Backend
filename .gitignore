@@ -11,3 +11,5 @@ yarn-error.log*
 
 # Uploaded files
 /uploads
+temp_auto_push.bat
+temp_interactive_push.bat

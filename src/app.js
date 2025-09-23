@@ -14,7 +14,7 @@ app.post('/api/payment/webhook', express.raw({type: 'application/json'}), paymen
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(passport.initialize());
+//app.use(passport.initialize());
 
 app.use('/uploads', express.static('uploads'));
 

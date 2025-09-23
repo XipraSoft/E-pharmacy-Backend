@@ -3,6 +3,7 @@ const router = express.Router();
 const passport = require('passport');
 const authController = require('../controllers/auth.controller');
 
+
 /**
  * @swagger
  * tags:
@@ -121,37 +122,8 @@ router.post('/forgot-password', authController.forgotPassword);
  *         description: Password reset successfully.
  */
 router.post('/reset-password', authController.resetPassword);
-
-
-// --- Social Logins ---
-
-/**
- * @swagger
- * /api/auth/google:
- *   get:
- *     summary: Log in with Google
- *     tags: [Authentication]
- *     description: This will redirect to Google's login page.
- *     responses:
- *       302:
- *         description: Redirecting to Google.
- */
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-router.get('/google/callback', passport.authenticate('google', { session: false }), authController.socialLoginSuccess);
-
-/**
- * @swagger
- * /api/auth/facebook:
- *   get:
- *     summary: Log in with Facebook
- *     tags: [Authentication]
- *     description: This will redirect to Facebook's login page.
- *     responses:
- *       302:
- *         description: Redirecting to Facebook.
- */
-router.get('/facebook', passport.authenticate('facebook', { scope: ['public_profile', 'email'] }));
-router.get('/facebook/callback', passport.authenticate('facebook', { session: false }), authController.socialLoginSuccess);
-
+// Post api/auth/google/verify
+router.post('/google/verify', authController.verifyGoogleToken);
+router.post('/facebook/verify', authController.verifyFacebookToken);
 
 module.exports = router;
